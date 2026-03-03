@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
-import { useDeviceStore } from '@/store/device.store.ts'
+import { useDeviceStore } from '@/store/device.store'
 import DeviceTabs from '@/components/device/DeviceTabs.vue'
 import DeviceTable from '@/components/device/DeviceTable.vue'
 

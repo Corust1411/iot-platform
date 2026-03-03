@@ -3,6 +3,12 @@
   <head>
     <meta charset="UTF-8">
     <link rel="icon" href="/favicon.ico">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=account_circle" />
+    
+    
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vite App</title>
   </head>
@@ -11,29 +17,3 @@
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
-
-import { createRouter, createWebHistory } from 'vue-router';
-import Login from '@/views/Login.vue';
-import Dashboard from '@/views/Dashboard.vue';
-
-const routes = [
-  { path: '/', component: Login },
-  { path: '/dashboard', component: Dashboard }
-];
-
-const router = createRouter({
-  history: createWebHistory(),
-  routes
-});
-
-router.beforeEach((to, from, next) => {
-  const token = localStorage.getItem('token');
-
-  if (to.path !== '/' && !token) {
-    next('/');
-  } else {
-    next();
-  }
-});
-
-export default router;
