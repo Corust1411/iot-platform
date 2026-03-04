@@ -1,5 +1,4 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import Login from '../views/Login.vue';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -7,7 +6,7 @@ const router = createRouter({
     {
       path: '/',
       name: 'Login',
-      component: Login,
+      component: () => import('../views/Login.vue'), 
     },
     {
       path: '/managedevice',
@@ -33,6 +32,11 @@ const router = createRouter({
       path: '/register-device',
       name: 'RegisterDevice',
       component: () => import('../views/RegisterDevice.vue'),
+    },
+    {
+      path: '/device/:id',
+      name: 'DeviceDetail',
+      component: () => import('../views/DeviceDetail.vue'),
     }
   ],
 });

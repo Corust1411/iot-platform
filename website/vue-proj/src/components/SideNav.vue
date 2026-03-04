@@ -79,13 +79,11 @@
   font-weight: 600;
 }
 
-/* เมื่อ Hover เมนูสีเทาให้เข้มขึ้นเล็กน้อย */
 .nav-item:hover:not(.router-link-active) {
   background-color: #f3f4f6;
   color: #374151;
 }
 
-/* สถานะ Active: เมื่อเข้าสู่หน้านั้นๆ (สีแสด) */
 .nav-item.router-link-active {
   background-color: #fff7ed; /* พื้นหลังสีแสดอ่อนๆ */
   color: #FF4B4A; /* สีแสด */

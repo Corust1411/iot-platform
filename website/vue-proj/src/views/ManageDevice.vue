@@ -39,23 +39,21 @@
             <div 
               v-for="device in displayedDevices"
               :key="device.id"
-              class="table-row"
+              class="table-row clickable-row"
+              @click="goToDeviceDetail(device.id)"
             >
               <span class="fw-bold">{{ device.name }}</span>
-              
               <span>
                 <span class="badge">{{ device.category || 'Uncategorized' }}</span>
               </span>
-              
               <span class="protocol-text">
                 <span v-if="device.protocol === 'wifi'"></span>
                 <span v-else-if="device.protocol === 'zigbee'"></span>
                 <span v-else></span>
                 {{ device.protocol ? device.protocol.toUpperCase() : 'N/A' }}
               </span>
-
               <span class="text-right">
-                <button class="icon-btn heart-btn" @click="toggleFavorite(device)">
+                <button class="icon-btn heart-btn" @click.stop="toggleFavorite(device)">
                   <span 
                     class="material-symbols-outlined" 
                     :class="{ 'filled-heart': device.is_favorite }"
@@ -65,7 +63,6 @@
                 </button>
               </span>
             </div>
-
             <div v-if="displayedDevices.length === 0" class="empty-state">
               No devices found.
             </div>
@@ -95,9 +92,8 @@
 </template>
 
 <script>
-// ตรวจสอบชื่อ Component ให้ตรงกับไฟล์จริงของคุณด้วยนะครับ
-import TopBar from '@/components/TopBar.vue' // หรือ TopBar.vue
-import SideNav from '@/components/SideNav.vue'  // หรือ SideNav.vue
+import TopBar from '@/components/TopBar.vue'
+import SideNav from '@/components/SideNav.vue'
 import { http } from '@/api/http'
 
 export default {
@@ -106,26 +102,21 @@ export default {
     return {
       username: 'Unknown User',
       devices: [],
-      // ตัวแปรสำหรับจัดการ Tab และ Pagination
       currentTab: 'all',
       currentPage: 1,
-      itemsPerPage: 10 // แสดงกี่ตัวต่อ 1 หน้า
+      itemsPerPage: 10
     }
   },
   computed: {
-    // 1. กรองอุปกรณ์ตาม Tab ที่เลือก
     filteredDevices() {
       if (this.currentTab === 'favorite') {
-        // สมมติว่าในตาราง device มีคอลัมน์ is_favorite
         return this.devices.filter(d => d.is_favorite);
       }
       return this.devices;
     },
-    // 2. คำนวณจำนวนหน้าทั้งหมด
     totalPages() {
       return Math.ceil(this.filteredDevices.length / this.itemsPerPage) || 1;
     },
-    // 3. ตัดข้อมูลมาแสดงเฉพาะหน้าที่เลือก (Pagination)
     displayedDevices() {
       const start = (this.currentPage - 1) * this.itemsPerPage;
       const end = start + this.itemsPerPage;
@@ -133,14 +124,14 @@ export default {
     }
   },
   methods: {
-    // เปลี่ยน Tab
     setTab(tab) {
       this.currentTab = tab;
-      this.currentPage = 1; // เมื่อเปลี่ยน Tab ให้กลับไปหน้า 1 เสมอ
+      this.currentPage = 1;
     },
-    // กดหัวใจ
+    goToDeviceDetail(id) {
+      this.$router.push(`/device/${id}`);
+    },
     async toggleFavorite(device) {
-      // สลับค่าในหน้า UI ให้ผู้ใช้เห็นทันที
       device.is_favorite = !device.is_favorite;
 
       // (Optional) ยิง API ไปอัปเดตสถานะหัวใจใน Database
@@ -153,7 +144,6 @@ export default {
       }
       */
     },
-    // ดึงข้อมูลอุปกรณ์
     async fetchDevices() {
       try {
         const res = await http.get('/devices');
@@ -164,13 +154,10 @@ export default {
     }
   },
   async mounted() {
-    // 1. ดึงชื่อผู้ใช้จาก localStorage มาแสดง
     const storedUser = localStorage.getItem('username');
     if (storedUser) {
       this.username = storedUser;
     }
-
-    // 2. ดึงข้อมูลอุปกรณ์จาก API
     await this.fetchDevices();
   }
 }
@@ -179,14 +166,14 @@ export default {
 <style scoped>
 .layout {
   display: flex;
-  min-height: calc(100vh - 64px); /* หักความสูง TopBar ออก */
+  min-height: calc(100vh - 64px);
 }
 
 .content {
   flex: 1;
   padding: 32px 40px;
   max-height: 93vh;
-  background: #f8fafc; /* สีเทาอ่อนเรียบหรู */
+  background: #f8fafc;
 }
 
 .page-title {
@@ -197,7 +184,6 @@ export default {
   margin-top: 0;
 }
 
-/* --- Device Card & Tabs --- */
 .device-card {
   background: #ffffff;
   padding: 24px;
@@ -229,7 +215,7 @@ export default {
 }
 
 .tabs .active {
-  color: #000000; /* สีแสด */
+  color: #000000;
 }
 
 .tabs .active::after {
@@ -242,37 +228,38 @@ export default {
   background-color: #000000;
 }
 
-/* --- Table Styles --- */
 .table-container {
   display: flex;
   flex-direction: column;
+  background-color: #DEE5ED;
+  border-radius: 10px;
+  padding: 0vh 1vh;
 }
 
 .table-header,
 .table-row {
   display: grid;
-  grid-template-columns: 2fr 1.5fr 1.5fr 80px; /* แบ่งสัดส่วนคอลัมน์ใหม่ ให้ปุ่มอยู่ขวาสุด */
+  grid-template-columns: 2fr 1.5fr 1.5fr 80px;
   align-items: center;
   padding: 16px 12px;
-  background-color: #DEE5ED;
-  border-radius: 10px;
 }
 
 .table-header {
   font-weight: 700;
   color: #4b5563;
   font-size: 13px;
-  border-radius: 8px;
   margin-bottom: 8px;
+  border-bottom: 1px solid #7B7B7B;
 }
 
 .table-row {
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid #7B7B7B;
   transition: background-color 0.2s;
+  font-size: 13px;
 }
 
 .table-row:hover {
-  background-color: #f9fafb;
+  background-color: #d6d8db;
 }
 
 .table-row:last-child {
@@ -290,7 +277,6 @@ export default {
   color: #1f2937;
 }
 
-/* --- Badges & Icons --- */
 .badge {
   background-color: #e0e7ff;
   color: #4338ca;
@@ -333,7 +319,7 @@ export default {
 
 .filled-heart {
   font-variation-settings: 'FILL' 1;
-  color: #ef4444; /* สีแดง */
+  color: #ef4444;
 }
 
 .heart-btn:hover .material-symbols-outlined:not(.filled-heart) {
@@ -348,7 +334,6 @@ export default {
   color: #6b7280;
 }
 
-/* --- Paginator --- */
 .paginator {
   display: flex;
   align-items: center;
@@ -382,14 +367,13 @@ export default {
   color: #4b5563;
 }
 
-/* --- Footer & Buttons --- */
 .footer {
   text-align: right;
   margin-top: 24px;
 }
 
 .add-btn {
-  background: #FF4B4A; /* สีแสด */
+  background: #FF4B4A;
   color: white;
   border: none;
   padding: 10px 20px;
@@ -408,5 +392,34 @@ export default {
 .add-btn:hover {
   background: #fb3131;
   transform: translateY(-2px);
+}
+
+.device-card {
+  background: #ffffff;
+  padding: 24px;
+  height: 70vh;
+  border-radius: 16px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+}
+
+.table-container {
+  display: flex;
+  flex-direction: column;
+  flex: 1; 
+  overflow-y: auto; 
+}
+
+.clickable-row {
+  cursor: pointer;
+}
+
+.footer {
+  text-align: right;
+  margin-top: auto; 
+  padding-top: 16px;
+  border-top: 1px solid #e5e7eb; 
 }
 </style>

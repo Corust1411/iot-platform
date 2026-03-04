@@ -44,3 +44,20 @@ export const getAllDevices = async () => {
   const result = await pool.query(`SELECT * FROM device ORDER BY created_at DESC`);
   return result.rows;
 };
+
+export const getDeviceById = async (accountId: number, deviceId: number) => {
+  const query = `
+    SELECT d.id, d.name, d.category, d.description, d.protocol, c.config
+    FROM device d
+    LEFT JOIN device_protocol_config c ON d.id = c.device_id
+    WHERE d.id = $1 AND d.account_id = $2
+  `;
+  // important to ensure device belongs to the account for security
+  const result = await pool.query(query, [deviceId, accountId]);
+  
+  if (result.rows.length === 0) {
+    throw new Error('Device not found or unauthorized');
+  }
+  
+  return result.rows[0];
+};
