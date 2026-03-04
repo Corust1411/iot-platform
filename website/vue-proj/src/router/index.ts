@@ -29,6 +29,11 @@ const router = createRouter({
       name: 'Profile',
       component: () => import('../views/Profile.vue'), 
     },
+    {
+      path: '/register-device',
+      name: 'RegisterDevice',
+      component: () => import('../views/RegisterDevice.vue'),
+    }
   ],
 });
 

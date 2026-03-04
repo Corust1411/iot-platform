@@ -2,7 +2,7 @@
   <header class="navbar">
     <div class="left">
         <a>
-            <img src="\public\logo.png" width="70px" height="auto">
+            <img src="\image\logo.png" width="70px" height="auto">
         </a>
     </div>
 

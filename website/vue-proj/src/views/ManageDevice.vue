@@ -82,9 +82,9 @@
           </div>
 
           <div class="footer">
-            <button class="add-btn">
+            <button class="add-btn" @click="$router.push('/register-device')">
               <span class="material-symbols-outlined">add</span>
-              Register device
+              Register new device
             </button>
           </div>
 
