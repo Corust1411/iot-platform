@@ -1,21 +1,46 @@
-<script setup lang="ts">
-import { onMounted } from 'vue'
-import { useDeviceStore } from '@/store/device.store'
-import DeviceTabs from '@/components/device/DeviceTabs.vue'
-import DeviceTable from '@/components/device/DeviceTable.vue'
+<template>
+  <div>
+    <TopBar :username="username" />
 
-const store = useDeviceStore()
+    <div class="layout">
+      <SideNav />
 
-onMounted(() => {
-  store.loadDevices()
-})
+      <div class="content">
+        <DeviceTable :devices="devices" />
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import TopBar from '@/components/TopBar.vue'
+import SideNav from '@/components/SideNav.vue'
+import DeviceTable from '@/components/DeviceTable.vue'
+import { http } from '@/api/http'
+
+export default {
+  components: { TopBar, SideNav, DeviceTable },
+  data() {
+    return {
+      username: 'User account name',
+      devices: []
+    }
+  },
+  async mounted() {
+    const res = await http.get('/devices')
+    this.devices = res.data
+  }
+}
 </script>
 
-<template>
-  <DeviceTabs @change="store.changeTab" />
+<style scoped>
+.layout {
+  display: flex;
+}
 
-  <DeviceTable
-    v-if="!store.loading"
-    :devices="store.devices"
-  />
-</template>
+.content {
+  flex: 1;
+  padding: 30px;
+  background: #f8fafc;
+}
+</style>
