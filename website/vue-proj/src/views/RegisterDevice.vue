@@ -324,7 +324,6 @@ export default {
       };
       try {
         await http.post('/devices', payload);
-        // alert('Device registered successfully!');
 
         this.$router.push('/managedevice'); 
       } catch (err) {
