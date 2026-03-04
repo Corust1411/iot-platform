@@ -26,7 +26,7 @@
           <input
             v-model="password"
             type="password"
-            placeholder="*** Password"
+            placeholder="Password"
             required
           />
         </div>
