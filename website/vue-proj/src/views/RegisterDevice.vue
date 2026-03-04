@@ -222,7 +222,7 @@
 <script>
 import TopBar from '@/components/TopBar.vue'
 import SideNav from '@/components/SideNav.vue'
-// import { http } from '@/api/http'
+import { http } from '@/api/http'
 
 export default {
   components: { TopBar, SideNav },
@@ -270,7 +270,6 @@ export default {
       this.showError = false
       this.step++
     },
-    
     goToStep(targetStep) {
       if (targetStep > this.step) {
         // ดักกรณีผู้ใช้กดข้าม Step จากเมนูด้านบน
@@ -298,9 +297,33 @@ export default {
           return;
         }
       }
-
       this.showError = false;
-      console.log('Device Data Ready to Submit:', this.form);
+
+      const configData = {};
+      if (this.form.protocol === 'wifi') {
+        configData.macAddress = this.form.macAddress;
+      } else if (this.form.protocol === 'lorawan') {
+        configData.devEui = this.form.devEui;
+        configData.joinEui = this.form.joinEui;
+        configData.appKey = this.form.appKey;
+      }
+      const payload = {
+        name: this.form.name,
+        category: this.form.category,
+        description: this.form.description,
+        protocol: this.form.protocol,
+        config: configData
+      };
+      try {
+        await http.post('/devices', payload);
+        alert('Device registered successfully!');
+
+        this.$router.push('/managedevice'); 
+      } catch (err) {
+        console.error('Failed to create device:', err);
+        const errorMsg = err.response?.data?.message || 'Unknown error occurred';
+        alert(`Error: ${errorMsg}`);
+      }
     },
     generate16Hex(field) {
       const hexString = [...Array(16)]

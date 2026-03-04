@@ -48,9 +48,9 @@
               </span>
               
               <span class="protocol-text">
-                <span class="material-symbols-outlined" v-if="device.protocol === 'wifi'">wifi</span>
-                <span class="material-symbols-outlined" v-else-if="device.protocol === 'zigbee'">sensors</span>
-                <span class="material-symbols-outlined" v-else>cell_tower</span>
+                <span v-if="device.protocol === 'wifi'"></span>
+                <span v-else-if="device.protocol === 'zigbee'"></span>
+                <span v-else></span>
                 {{ device.protocol ? device.protocol.toUpperCase() : 'N/A' }}
               </span>
 
@@ -255,6 +255,7 @@ export default {
   align-items: center;
   padding: 16px 12px;
   background-color: #DEE5ED;
+  border-radius: 10px;
 }
 
 .table-header {
@@ -285,7 +286,7 @@ export default {
 }
 
 .fw-bold {
-  font-weight: 600;
+  font-weight: 300;
   color: #1f2937;
 }
 

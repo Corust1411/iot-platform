@@ -1,12 +1,24 @@
 import { Request, Response } from 'express';
 import * as deviceService from '../services/device.service';
 
-export const createDevice = async (req: Request, res: Response) => {
+interface AuthRequest extends Request {
+  user?: { id: number; role: string };
+}
+
+export const createDevice = async (req: AuthRequest, res: Response) => {
   try {
-    const device = await deviceService.createDevice(req.body);
-    res.status(201).json(device);
-  } catch (error) {
-    res.status(500).json({ message: 'Error creating device', error });
+    const accountId = req.user?.id; 
+    
+    if (!accountId) {
+      return res.status(401).json({ message: 'Unauthorized: User not found in token' });
+    }
+
+    const newDevice = await deviceService.createNewDevice(accountId, req.body);
+    res.status(201).json(newDevice);
+
+  } catch (error: any) {
+    console.error('Create Device Error:', error);
+    res.status(500).json({ message: 'Failed to create device', error: error.message });
   }
 };
 
