@@ -10,9 +10,24 @@ const router = createRouter({
       component: Login,
     },
     {
+      path: '/managedevice',
+      name: 'ManageDevice',
+      component: () => import('../views/ManageDevice.vue'), 
+    },
+    {
+      path: '/mqtt',
+      name: 'MQTTClient',
+      component: () => import('../views/Mqtt.vue'),
+    },
+    {
       path: '/dashboard',
       name: 'Dashboard',
-      component: () => import('../views/ManageDevice.vue'), 
+      component: () => import('../views/Dashboard.vue'), 
+    },
+    {
+      path: '/profile',
+      name: 'Profile',
+      component: () => import('../views/Profile.vue'), 
     },
   ],
 });
@@ -21,7 +36,7 @@ router.beforeEach((to, from, next) => {
   const token = localStorage.getItem('token');
 
   if (to.path === '/' && token) {
-    next('/dashboard'); 
+    next('/managedevice'); 
   } 
   else if (to.path !== '/' && !token) {
     next('/'); 

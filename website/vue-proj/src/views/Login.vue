@@ -69,7 +69,9 @@ export default {
         });
 
         localStorage.setItem('token', res.data.token);
-        this.$router.push('/dashboard');
+        localStorage.setItem('username', res.data.user.username);
+        
+        this.$router.push('/managedevice');
       } catch (err) {
         this.error = err.response?.data?.message || 'Invalid username or password';
       } finally {
@@ -78,6 +80,8 @@ export default {
     }
   }
 };
+
+
 </script>
 
 <style scoped>
