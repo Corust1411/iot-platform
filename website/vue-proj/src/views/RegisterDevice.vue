@@ -48,13 +48,17 @@
             </div>
 
             <div class="form-group">
-              <label>Category</label>
-              <select v-model="form.category">
+              <label>Category <span class="required">*</span></label>
+              <select 
+                v-model="form.category"
+                :class="{ 'error-border': showError && !form.category }"
+              >
                 <option value="">Select category</option>
                 <option value="sensor">Sensor</option>
                 <option value="light">Light</option>
                 <option value="camera">Camera</option>
               </select>
+              <span v-if="showError && !form.category" class="error-text">Category is required</span>
             </div>
 
             <div class="form-group">
@@ -252,7 +256,8 @@ export default {
     },
     handleNext() {
       if (this.step === 1) {
-        if (!this.form.name.trim()) {
+        // เช็คว่า Name ว่าง หรือ Category ว่างหรือไม่
+        if (!this.form.name.trim() || !this.form.category) {
           this.showError = true
           return
         }
@@ -265,9 +270,11 @@ export default {
       this.showError = false
       this.step++
     },
+    
     goToStep(targetStep) {
       if (targetStep > this.step) {
-        if (this.step === 1 && !this.form.name.trim()) {
+        // ดักกรณีผู้ใช้กดข้าม Step จากเมนูด้านบน
+        if (this.step === 1 && (!this.form.name.trim() || !this.form.category)) {
           this.showError = true
           return
         }
