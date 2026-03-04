@@ -118,6 +118,12 @@
         </div>
       </div>
     </div>
+    <transition name="fade">
+      <div v-if="showToast" class="toast-notification">
+        <span class="material-symbols-outlined">check_circle</span>
+        {{ toastMessage }}
+      </div>
+    </transition>
   </div>
 </template>
 
@@ -132,6 +138,8 @@ export default {
     return {
       username: 'Unknown User',
       isLoading: true,
+      showToast: false,
+      toastMessage: '',
       device: {
         id: null,
         name: '',
@@ -192,10 +200,18 @@ export default {
       if (!text || text === '-') return;
       try {
         await navigator.clipboard.writeText(text);
-        alert('Copied: ' + text);
+        this.triggerToast('Text copied to clipboard!'); 
       } catch (err) {
         console.error('Failed to copy', err);
       }
+    },
+    triggerToast(message) {
+      this.toastMessage = message;
+      this.showToast = true;
+      
+      setTimeout(() => {
+        this.showToast = false;
+      }, 3000); 
     },
     async copyTopic() {
       this.copyText(this.mqttTopic);
@@ -397,5 +413,37 @@ export default {
 .edit-btn:hover {
   background: #324766;
   transform: translateY(-2px);
+}
+
+.toast-notification {
+  position: fixed;
+  bottom: 40px;
+  right: 40px;
+  background-color: #7B7B7B; 
+  color: white;
+  padding: 12px 24px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 10px 15px -3px rgba(134, 134, 134, 0.3);
+  z-index: 9999;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.toast-notification .material-symbols-outlined {
+  font-size: 22px;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+  transform: translateY(20px);
 }
 </style>
