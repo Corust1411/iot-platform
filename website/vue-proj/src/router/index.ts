@@ -19,9 +19,9 @@ const router = createRouter({
       component: () => import('../views/Mqtt.vue'),
     },
     {
-      path: '/dashboard',
+      path: '/managedashboard',
       name: 'Dashboard',
-      component: () => import('../views/Dashboard.vue'), 
+      component: () => import('../views/ManageDashboard.vue'), 
     },
     {
       path: '/profile',
