@@ -133,3 +133,17 @@ export const updateDeviceById = async (accountId: number, deviceId: number, upda
     client.release();
   }
 };
+
+export const getRegisteredZigbeeIeeeAddrs = async (accountId: number): Promise<string[]> => {
+  const query = `
+    SELECT c.config->>'ieeeAddr' AS ieee_addr
+    FROM device d
+    JOIN device_protocol_config c ON d.id = c.device_id
+    WHERE d.account_id = $1 AND d.protocol = 'zigbee'
+  `;
+  const result = await pool.query(query, [accountId]);
+  
+  return result.rows
+    .map(row => row.ieee_addr)
+    .filter(addr => addr != null);
+};
