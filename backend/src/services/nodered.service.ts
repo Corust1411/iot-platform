@@ -36,13 +36,55 @@ export const sendDeviceToNodeRed = async (deviceData: any) => {
     return response.data;
   } catch (error: any) {
     console.error(`\n[Node-RED Error] Failed to send data to ${endpoint}`);
-    // --- เพิ่ม 4 บรรทัดนี้เพื่อดู Error จริงๆ ---
     console.error('>> Error Message:', error.message);
     if (error.response) {
       console.error('>> Status Code:', error.response.status);
       console.error('>> Response Data:', error.response.data);
     }
-    // ----------------------------------------
     throw new Error(error.response?.data?.message || 'Failed to connect to Node-RED');
+  }
+};
+
+const decryptPayload = (encryptedData: string): any => {
+  try {
+    const parts = encryptedData.split(':');
+    const iv = Buffer.from(parts[0], 'hex');
+    const encryptedText = Buffer.from(parts[1], 'hex');
+    
+    const decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(ENCRYPTION_KEY, 'hex'), iv);
+    let decrypted = decipher.update(encryptedText);
+    decrypted = Buffer.concat([decrypted, decipher.final()]);
+    
+    return JSON.parse(decrypted.toString());
+  } catch (error) {
+    throw new Error('Failed to decrypt data from Node-RED');
+  }
+};
+
+export const permitJoinZigbee = async (durationSeconds: number = 60) => {
+  const endpoint = `${NODE_RED_URL}/api/zigbee/permit-join`;
+  try {
+    const response = await axios.post(
+      endpoint, 
+      { duration: durationSeconds }, 
+      { headers: { 'x-api-key': NODE_RED_API_KEY }, timeout: 5000 }
+    );
+    return response.data;
+  } catch (error: any) {
+    throw new Error(error.response?.data?.message || 'Failed to trigger permit join');
+  }
+};
+
+export const getZigbeeDevicesFromPi = async () => {
+  const endpoint = `${NODE_RED_URL}/api/zigbee/devices`;
+  try {
+    const response = await axios.get(endpoint, {
+      headers: { 'x-api-key': NODE_RED_API_KEY },
+      timeout: 10000
+    });
+    
+    return decryptPayload(response.data.payload);
+  } catch (error: any) {
+    throw new Error(error.response?.data?.message || 'Failed to fetch zigbee devices');
   }
 };

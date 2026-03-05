@@ -150,10 +150,64 @@
                   Make sure to enable Pairing Mode on your Zigbee device.
                 </div>
               </div>
-              <div class="zigbee-list-container">
-                <p style="color: #6b7280; text-align: center; padding: 20px 0; border: 1px dashed #d1d5db;">
-                  [Zigbee Device List Placeholder]
-                </p>
+              
+              <div class="zigbee-scan-container">
+                <div class="scan-header">
+                  <div>
+                    <h4 class="scan-title">Discover Zigbee Devices</h4>
+                    <p class="scan-subtitle">Put your device in pairing mode and click scan.</p>
+                  </div>
+                  <div class="scan-actions">
+                    <button class="btn-secondary" @click="fetchZigbeeDevices" :disabled="isScanning">
+                      <span class="material-symbols-outlined">refresh</span>
+                    </button>
+                    <button class="next-btn" style="border-radius: 8px;" @click="scanZigbee" :disabled="isScanning">
+                      <span class="material-symbols-outlined" :class="{ 'spin-anim': isScanning }">sensors</span>
+                      {{ isScanning ? `Scanning (${scanCountdown}s)...` : 'Scan New Device' }}
+                    </button>
+                  </div>
+                </div>
+
+                <div class="device-list-box">
+                  <div v-if="isLoadingZigbee" class="empty-state-small">Loading devices...</div>
+                  <div v-else-if="zigbeeDevices.length === 0" class="empty-state-small">
+                    No new devices found. Try scanning again.
+                  </div>
+                  
+                  <table v-else class="zigbee-table">
+                    <thead>
+                      <tr>
+                        <th>Device Name</th>
+                        <th>Vendor</th>
+                        <th>Model</th>
+                        <th class="text-right">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr v-for="zDev in zigbeeDevices" :key="zDev.ieeeAddr">
+                        <td>
+                          <div class="z-name">{{ zDev.friendlyName }}</div>
+                          <div class="z-ieee code-font">{{ zDev.ieeeAddr }}</div>
+                        </td>
+                        <td><span class="badge-gray">{{ zDev.vendor }}</span></td>
+                        <td><span class="z-model">{{ zDev.model_id }}</span></td>
+                        <td class="text-right">
+                          <button 
+                            class="add-dev-btn" 
+                            :class="{ 'selected-btn': form.ieeeAddr === zDev.ieeeAddr }"
+                            @click="selectZigbeeDevice(zDev)"
+                          >
+                            {{ form.ieeeAddr === zDev.ieeeAddr ? 'Deselect' : 'Add' }}
+                          </button>
+                        </td>
+                        
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <span v-if="showError && !form.ieeeAddr" class="error-text block-error" style="margin-top: 16px; text-align: left;">
+                  Please select a Zigbee device from the list above.
+                </span>
               </div>
             </div>
 
@@ -247,8 +301,15 @@ export default {
         macAddress: '',
         devEui: '',
         joinEui: '',
-        appKey: ''
-      }
+        appKey: '',
+        ieeeAddr: '' // เพิ่มมารองรับ Zigbee
+      },
+      // ตัวแปรสำหรับ Zigbee Scan
+      zigbeeDevices: [],
+      isLoadingZigbee: false,
+      isScanning: false,
+      scanCountdown: 0,
+      scanTimer: null,
     }
   },
   mounted() {
@@ -257,6 +318,10 @@ export default {
       this.username = storedUser
     }
   },
+  beforeUnmount() {
+    // ล้างเวลาทิ้งเมื่อออกจากหน้า
+    if (this.scanTimer) clearInterval(this.scanTimer);
+  },
   methods: {
     selectProtocol(type) {
       this.form.protocol = type
@@ -264,7 +329,6 @@ export default {
     },
     handleNext() {
       if (this.step === 1) {
-        // เช็คว่า Name ว่าง หรือ Category ว่างหรือไม่
         if (!this.form.name.trim() || !this.form.category) {
           this.showError = true
           return
@@ -274,13 +338,16 @@ export default {
           this.showError = true
           return
         }
+        // ถ้าเป็น Zigbee ให้โหลดข้อมูลเลยตอนกด Next
+        if (this.form.protocol === 'zigbee' && this.zigbeeDevices.length === 0) {
+          this.fetchZigbeeDevices();
+        }
       }
       this.showError = false
       this.step++
     },
     goToStep(targetStep) {
       if (targetStep > this.step) {
-        // ดักกรณีผู้ใช้กดข้าม Step จากเมนูด้านบน
         if (this.step === 1 && (!this.form.name.trim() || !this.form.category)) {
           this.showError = true
           return
@@ -292,21 +359,84 @@ export default {
       }
       this.step = targetStep
       this.showError = false
+      
+      if (this.step === 3 && this.form.protocol === 'zigbee' && this.zigbeeDevices.length === 0) {
+        this.fetchZigbeeDevices();
+      }
     },
+    // --- Zigbee Methods ---
+    async scanZigbee() {
+      this.isScanning = true;
+      this.scanCountdown = 60;
+      
+      try {
+        await http.post('/devices/zigbee/permit-join');
+        this.triggerToast('Pairing mode enabled. Please activate your device.');
+        
+        this.scanTimer = setInterval(() => {
+          this.scanCountdown--;
+          if (this.scanCountdown <= 0) {
+            this.stopScan();
+          }
+        }, 1000);
+
+      } catch (error) {
+        console.error("Failed to start scan:", error);
+        alert("Failed to enable pairing mode.");
+        this.stopScan();
+      }
+    },
+    stopScan() {
+      this.isScanning = false;
+      clearInterval(this.scanTimer);
+      this.fetchZigbeeDevices(); // โหลดข้อมูลอัตโนมัติเมื่อครบเวลา
+    },
+    async fetchZigbeeDevices() {
+      this.isLoadingZigbee = true;
+      try {
+        const res = await http.get('/devices/zigbee/discover');
+        this.zigbeeDevices = res.data.devices || []; 
+      } catch (error) {
+        console.error("Failed to fetch zigbee devices:", error);
+      } finally {
+        this.isLoadingZigbee = false;
+      }
+    },
+    selectZigbeeDevice(zDevice) {
+      // ดักจับว่าถ้ากดปุ่มของอุปกรณ์ตัวเดิมที่เลือกไว้อยู่แล้ว ให้เคลียร์ค่าทิ้ง (Deselect)
+      if (this.form.ieeeAddr === zDevice.ieeeAddr) {
+        this.form.ieeeAddr = ''; 
+        this.triggerToast('Device deselected.');
+      } 
+      // ถ้ากดยังอุปกรณ์ตัวใหม่ ให้เลือกอุปกรณ์นั้น (Select)
+      else {
+        this.form.ieeeAddr = zDevice.ieeeAddr;
+        if (!this.form.name.trim()) {
+          this.form.name = zDevice.friendlyName; 
+        }
+        this.triggerToast(`${zDevice.friendlyName} selected!`);
+        this.showError = false;
+      }
+    },
+    // -----------------------
     async submitDevice() {
+      // Validate ก่อน Submit
       if (this.form.protocol === 'wifi') {
         if (!this.form.macAddress.trim()) {
-          this.showError = true;
-          return;
+          this.showError = true; return;
         }
       } else if (this.form.protocol === 'lorawan') {
         if (!this.form.devEui.trim() || !this.form.joinEui.trim() || !this.form.appKey.trim()) {
-          this.showError = true;
-          return;
+          this.showError = true; return;
+        }
+      } else if (this.form.protocol === 'zigbee') {
+        if (!this.form.ieeeAddr.trim()) {
+          this.showError = true; return;
         }
       }
       this.showError = false;
 
+      // จัดเตรียม Config Data
       const configData = {};
       if (this.form.protocol === 'wifi') {
         configData.macAddress = this.form.macAddress;
@@ -314,7 +444,10 @@ export default {
         configData.devEui = this.form.devEui;
         configData.joinEui = this.form.joinEui;
         configData.appKey = this.form.appKey;
+      } else if (this.form.protocol === 'zigbee') {
+        configData.ieeeAddr = this.form.ieeeAddr;
       }
+
       const payload = {
         name: this.form.name,
         category: this.form.category,
@@ -322,9 +455,9 @@ export default {
         protocol: this.form.protocol,
         config: configData
       };
+
       try {
         await http.post('/devices', payload);
-
         this.$router.push('/managedevice'); 
       } catch (err) {
         console.error('Failed to create device:', err);
@@ -333,17 +466,11 @@ export default {
       }
     },
     generate16Hex(field) {
-      const hexString = [...Array(16)]
-        .map(() => Math.floor(Math.random() * 16).toString(16))
-        .join('')
-        .toUpperCase();
+      const hexString = [...Array(16)].map(() => Math.floor(Math.random() * 16).toString(16)).join('').toUpperCase();
       this.form[field] = hexString;
     },
     generate32Hex(field) {
-      const hexString = [...Array(32)]
-        .map(() => Math.floor(Math.random() * 32).toString(32))
-        .join('')
-        .toUpperCase();
+      const hexString = [...Array(32)].map(() => Math.floor(Math.random() * 32).toString(32)).join('').toUpperCase();
       this.form[field] = hexString;
     },
     async copyText(text) {
@@ -358,10 +485,7 @@ export default {
     triggerToast(message) {
       this.toastMessage = message;
       this.showToast = true;
-      
-      setTimeout(() => {
-        this.showToast = false;
-      }, 3000); 
+      setTimeout(() => { this.showToast = false; }, 3000); 
     }
   }
 }
@@ -376,36 +500,10 @@ export default {
 .back-btn { border: none; background: none; cursor: pointer; display: flex; align-items: center; color: #FF4B4A; padding: 0; }
 .register-card { background: #ffffff; padding: 32px; border-radius: 16px; border: 1px solid #e5e7eb; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
 
-.steps {
-  display: flex;
-  width: 100%;
-  border-bottom: 2px solid #e5e7eb;
-  margin-bottom: 32px;
-}
-
-.steps span {
-  flex: 1;
-  text-align: center;
-  padding: 12px 0;
-  font-weight: 600;
-  color: #9ca3af;
-  cursor: pointer;
-  position: relative;
-}
-
-.steps .active {
-  color: #000;
-}
-
-.steps .active::after {
-  content: '';
-  position: absolute;
-  bottom: -2px;
-  left: 0;
-  width: 100%;
-  height: 2px;
-  background-color: #000;
-}
+.steps { display: flex; width: 100%; border-bottom: 2px solid #e5e7eb; margin-bottom: 32px; }
+.steps span { flex: 1; text-align: center; padding: 12px 0; font-weight: 600; color: #9ca3af; cursor: pointer; position: relative; }
+.steps .active { color: #000; }
+.steps .active::after { content: ''; position: absolute; bottom: -2px; left: 0; width: 100%; height: 2px; background-color: #000; }
 
 .form-section { display: flex; flex-direction: column; gap: 20px;}
 .form-group { display: flex; flex-direction: column; gap: 8px; width: 100%; max-width: 60vh; }
@@ -423,8 +521,11 @@ textarea { min-height: 80px; resize: none; }
 .cancel-btn:hover { background: #FF4B4A; color: white; transition: 0.2s; }
 .next-btn { background: #FF4B4A; color: white; border: none; padding: 6px 16px; border-radius: 20px; cursor: pointer; font-family: inherit; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 10px rgba(249, 115, 22, 0.2); }
 .next-btn:hover { background: #fb3131; }
+.next-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 .create-btn { background: #10b981; color: white; border: none; padding: 6px 16px; border-radius: 20px; cursor: pointer; font-family: inherit; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2); }
 .create-btn:hover { background: #059669; }
+.btn-secondary { background-color: white; border: 1px solid #cbd5e1; color: #475569; padding: 6px 12px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; font-weight: 600; font-family: inherit;}
+.btn-secondary:hover:not(:disabled) { background-color: #f1f5f9; }
 
 .protocol-section, .detail-section { display: flex; flex-direction: column; }
 .protocol-title { font-size: 18px; font-weight: 600; margin-bottom: 24px; color: #374151; text-align: center; }
@@ -432,7 +533,6 @@ textarea { min-height: 80px; resize: none; }
 .protocol-card { width: 180px; height: 150px; background: #DEE5ED; border-radius: 12px; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; transition: 0.2s ease; }
 .protocol-card:hover { background: #aab2bb; }
 .protocol-card.selected { background: #aab2bb; }
-.protocol-icon { font-size: 48px; margin-bottom: 10px; }
 
 .config-header { font-size: 16px; font-weight: 700; color: #111827; margin: 0 0 16px 0; }
 .config-layout-split { display: flex; gap: 32px; }
@@ -452,35 +552,66 @@ textarea { min-height: 80px; resize: none; }
 .action-icon { font-size: 18px; color: #9ca3af; cursor: pointer; transition: color 0.2s ease; }
 .action-icon:hover { color: #FF4B4A; }
 
-.toast-notification {
-  position: fixed;
-  bottom: 40px;
-  right: 40px;
-  background-color: #7B7B7B; 
-  color: white;
-  padding: 12px 24px;
+/* Zigbee Specific CSS */
+.zigbee-scan-container {
+  background-color: #f9fafb;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 24px;
+}
+.scan-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.scan-title { font-size: 16px; font-weight: 700; color: #1e293b; margin: 0 0 4px 0; }
+.scan-subtitle { font-size: 13px; color: #64748b; margin: 0; }
+.scan-actions { display: flex; gap: 8px; align-items: center; }
+
+.device-list-box {
+  background: white;
+  border: 1px solid #e2e8f0;
   border-radius: 8px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  box-shadow: 0 10px 15px -3px rgba(134, 134, 134, 0.3);
-  z-index: 9999;
+  overflow: hidden;
+}
+.empty-state-small { text-align: center; padding: 30px; color: #94a3b8; font-size: 14px; }
+.zigbee-table { width: 100%; border-collapse: collapse; text-align: left; }
+.zigbee-table th { background-color: #f8fafc; padding: 12px 16px; font-size: 13px; color: #475569; border-bottom: 1px solid #e2e8f0; }
+.zigbee-table td { padding: 16px; border-bottom: 1px solid #e2e8f0; vertical-align: middle; }
+.zigbee-table tr:last-child td { border-bottom: none; }
+.zigbee-table tr:hover { background-color: #f1f5f9; }
+
+.z-name { font-weight: 600; color: #0f172a; font-size: 14px; }
+.z-ieee { font-size: 12px; color: #64748b; margin-top: 4px; }
+.z-model { font-size: 13px; color: #475569; }
+.badge-gray { background: #e2e8f0; color: #334155; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+.code-font { font-family: 'Courier New', Courier, monospace; }
+
+.add-dev-btn {
+  background-color: white;
+  color: #FF4B4A;
+  border: 1px solid #FF4B4A;
+  padding: 6px 16px;
+  border-radius: 20px;
   font-weight: 600;
-  font-size: 14px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: 0.2s;
 }
+.add-dev-btn:hover { background-color: #fef2f2; }
+.selected-btn {
+  background-color: #10b981;
+  color: white;
+  border-color: #10b981;
+}
+.selected-btn:hover { background-color: #059669; }
+.text-right { text-align: right; }
 
-.toast-notification .material-symbols-outlined {
-  font-size: 22px;
-}
+.spin-anim { animation: spin 2s linear infinite; }
+@keyframes spin { 100% { transform: rotate(360deg); } }
 
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.3s ease, transform 0.3s ease;
+.toast-notification {
+  position: fixed; bottom: 40px; right: 40px; background-color: #7B7B7B; 
+  color: white; padding: 12px 24px; border-radius: 8px; display: flex; align-items: center; gap: 10px;
+  box-shadow: 0 10px 15px -3px rgba(134, 134, 134, 0.3); z-index: 9999; font-weight: 600; font-size: 14px;
 }
-
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-  transform: translateY(20px);
-}
+.toast-notification .material-symbols-outlined { font-size: 22px; }
+.fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease, transform 0.3s ease; }
+.fade-enter-from, .fade-leave-to { opacity: 0; transform: translateY(20px); }
 </style>

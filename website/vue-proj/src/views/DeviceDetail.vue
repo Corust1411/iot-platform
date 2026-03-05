@@ -10,7 +10,7 @@
           <button class="back-btn" @click="$router.push('/managedevice')">
             <span class="material-symbols-outlined">arrow_back</span>
           </button>
-          <h1 class="page-title">{{ device.name || 'Loading...' }}</h1>
+          <h1 class="page-title">{{ isEditing ? 'Edit Device' : (device.name || 'Loading...') }}</h1>
         </div>
 
         <div class="detail-card">
@@ -24,15 +24,22 @@
               <div class="info-grid">
                 <div class="info-item">
                   <span class="info-label">Device Name</span>
-                  <span class="info-value">{{ device.name }}</span>
+                  <input v-if="isEditing" v-model="editForm.name" class="form-input" type="text">
+                  <span v-else class="info-value">{{ device.name }}</span>
                 </div>
                 <div class="info-item">
                   <span class="info-label">Category</span>
-                  <span class="info-value badge">{{ device.category }}</span>
+                  <select v-if="isEditing" v-model="editForm.category" class="form-input">
+                    <option value="sensor">Sensor</option>
+                    <option value="actuator">Actuator</option>
+                    <option value="gateway">Gateway</option>
+                  </select>
+                  <span v-else class="info-value badge">{{ device.category }}</span>
                 </div>
                 <div class="info-item full-width">
                   <span class="info-label">Description</span>
-                  <span class="info-value description-text">{{ device.description || 'No description provided.' }}</span>
+                  <textarea v-if="isEditing" v-model="editForm.description" class="form-input textarea"></textarea>
+                  <span v-else class="info-value description-text">{{ device.description || 'No description provided.' }}</span>
                 </div>
               </div>
             </div>
@@ -108,9 +115,20 @@
             </div>
 
             <div class="footer-action">
-              <button class="edit-btn">
-                Edit Device
-              </button>
+              <template v-if="isEditing">
+                <button class="cancel-btn" @click="cancelEdit">Cancel</button>
+                <button class="save-btn" @click="saveEdit">Save Changes</button>
+              </template>
+              <template v-else>
+                <button class="delete-btn" @click="deleteDevice">
+                  <span class="material-symbols-outlined">delete</span>
+                  Delete
+                </button>
+                <button class="edit-btn" @click="startEdit">
+                  <span class="material-symbols-outlined">edit</span>
+                  Edit Device
+                </button>
+              </template>
             </div>
 
           </div>
@@ -140,6 +158,8 @@ export default {
       isLoading: true,
       showToast: false,
       toastMessage: '',
+      isEditing: false,
+      editForm: {},
       device: {
         id: null,
         name: '',
@@ -152,10 +172,12 @@ export default {
   },
   computed: {
     mqttTopic() {
-      if (!this.device.name) return '';
-      const protocol = (this.device.protocol || 'unknown').toLowerCase();
-      const category = (this.device.category || 'unknown').toLowerCase();
-      const deviceName = this.device.name.toLowerCase().replace(/\s+/g, '_');
+      // ใช้ชื่อจาก editForm ถ้ายอยู่ในโหมดแก้ไข จะได้เห็น Topic เปลี่ยนแบบ Real-time
+      const targetDevice = this.isEditing ? this.editForm : this.device;
+      if (!targetDevice.name) return '';
+      const protocol = (targetDevice.protocol || 'unknown').toLowerCase();
+      const category = (targetDevice.category || 'unknown').toLowerCase();
+      const deviceName = targetDevice.name.toLowerCase().replace(/\s+/g, '_');
       
       return `multi_platform/gw/${protocol}/${category}/${deviceName}`;
     }
@@ -183,7 +205,7 @@ export default {
           id: res.data.id,
           name: res.data.name || 'Unnamed Device',
           category: res.data.category || '-',
-          description: res.data.description || 'No description provided.',
+          description: res.data.description || '',
           protocol: res.data.protocol || '',
           config: res.data.config || {} 
         };
@@ -195,6 +217,38 @@ export default {
         this.isLoading = false;
         this.$router.push('/managedevice'); 
       }
+    },
+    startEdit() {
+      this.isEditing = true;
+      this.editForm = JSON.parse(JSON.stringify(this.device));
+    },
+    cancelEdit() {
+      this.isEditing = false;
+      this.editForm = {};
+    },
+    async saveEdit() {
+      try {
+        await http.put(`/devices/${this.device.id}`, this.editForm);
+        this.device = JSON.parse(JSON.stringify(this.editForm));
+        this.isEditing = false;
+        this.triggerToast('Device updated successfully!');
+      } catch (error) {
+        console.error("Error updating device:", error);
+        alert('Failed to update device.');
+      }
+    },
+    async deleteDevice() {
+      // const isConfirm = confirm(`Are you sure you want to delete "${this.device.name}"?\nThis action cannot be undone.`);
+      // if (isConfirm) {
+        try {
+          await http.delete(`/devices/${this.device.id}`);
+          alert('Device deleted successfully.');
+          this.$router.push('/managedevice');
+        } catch (error) {
+          console.error("Error deleting device:", error);
+          alert('Failed to delete device. Please try again.');
+        }
+      // }
     },
     async copyText(text) {
       if (!text || text === '-') return;
@@ -315,27 +369,6 @@ export default {
   gap: 8px;
 }
 
-.copy-btn-small {
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: #9ca3af; /* สีเทาอ่อน */
-  display: flex;
-  align-items: center;
-  padding: 2px;
-  border-radius: 4px;
-  transition: all 0.2s;
-}
-
-.copy-btn-small:hover {
-  background-color: #c7ced6;
-  color: #FF4B4A; 
-}
-
-.copy-btn-small .material-symbols-outlined {
-  font-size: 18px;
-}
-
 .description-text {
   color: #4b5563;
   line-height: 1.5;
@@ -359,6 +392,27 @@ export default {
   text-transform: capitalize;
 }
 
+/* Edit Mode Inputs */
+.form-input {
+  width: 75%;
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+  color: #1f2937;
+  outline: none;
+  transition: border-color 0.2s;
+  background: #ffffff;
+}
+.form-input:focus {
+  border-color: #486284;
+}
+.textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
 /* MQTT Topic Box */
 .topic-box {
   display: flex;
@@ -371,28 +425,46 @@ export default {
   font-size: 14px;
 }
 
-.copy-btn {
+/* Buttons */
+.copy-btn, .copy-btn-small {
   background: none;
   border: none;
   cursor: pointer;
-  color: #486284;
   display: flex;
   align-items: center;
-  padding: 4px;
-  border-radius: 6px;
-  transition: 0.2s;
+  border-radius: 4px;
+  transition: all 0.2s;
 }
-.copy-btn:hover {
-  background-color: #c7ced6;
-  color: #FF4B4A;
-}
+.copy-btn { color: #486284; padding: 4px; }
+.copy-btn:hover { background-color: #c7ced6; color: #FF4B4A; }
+.copy-btn-small { color: #9ca3af; padding: 2px; }
+.copy-btn-small:hover { background-color: #c7ced6; color: #FF4B4A; }
+.copy-btn-small .material-symbols-outlined { font-size: 18px; }
 
-/* Edit Button */
+/* Footer Actions */
 .footer-action {
   display: flex;
   justify-content: flex-end;
+  gap: 16px;
   margin-top: 16px;
 }
+
+.delete-btn {
+  background: white;
+  color: #FF4B4A;
+  border: 1px solid #FF4B4A;
+  padding: 10px 24px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: 0.2s;
+}
+.delete-btn:hover { background: #fef2f2; transform: translateY(-2px); }
 
 .edit-btn {
   background: #486284;
@@ -407,14 +479,39 @@ export default {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  transition: transform 0.2s, background-color 0.2s;
+  transition: 0.2s;
 }
+.edit-btn:hover { background: #324766; transform: translateY(-2px); }
 
-.edit-btn:hover {
-  background: #324766;
-  transform: translateY(-2px);
+.cancel-btn {
+  background: white;
+  color: #6b7280;
+  border: 1px solid #d1d5db;
+  padding: 10px 24px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  transition: 0.2s;
 }
+.cancel-btn:hover { background: #f3f4f6; }
 
+.save-btn {
+  background: #10b981;
+  color: white;
+  border: none;
+  padding: 10px 24px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  transition: 0.2s;
+}
+.save-btn:hover { background: #059669; }
+
+/* Toast */
 .toast-notification {
   position: fixed;
   bottom: 40px;
@@ -431,19 +528,7 @@ export default {
   font-weight: 600;
   font-size: 14px;
 }
-
-.toast-notification .material-symbols-outlined {
-  font-size: 22px;
-}
-
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.3s ease, transform 0.3s ease;
-}
-
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-  transform: translateY(20px);
-}
+.toast-notification .material-symbols-outlined { font-size: 22px; }
+.fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease, transform 0.3s ease; }
+.fade-enter-from, .fade-leave-to { opacity: 0; transform: translateY(20px); }
 </style>

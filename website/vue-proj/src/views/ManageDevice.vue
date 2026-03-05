@@ -104,7 +104,7 @@ export default {
       devices: [],
       currentTab: 'all',
       currentPage: 1,
-      itemsPerPage: 10
+      itemsPerPage: 5
     }
   },
   computed: {
@@ -341,7 +341,6 @@ export default {
   gap: 16px;
   margin-top: 24px;
   padding-top: 16px;
-  border-top: 1px solid #e5e7eb;
 }
 
 .paginator button {
@@ -420,6 +419,5 @@ export default {
   text-align: right;
   margin-top: auto; 
   padding-top: 16px;
-  border-top: 1px solid #e5e7eb; 
 }
 </style>
