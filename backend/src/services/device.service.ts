@@ -91,3 +91,45 @@ export const deleteDeviceById = async (accountId: number, deviceId: number) => {
     client.release();
   }
 };
+
+export const updateDeviceById = async (accountId: number, deviceId: number, updateData: any) => {
+  const client = await pool.connect();
+  
+  try {
+    await client.query('BEGIN');
+
+    const updateDeviceQuery = `
+      UPDATE device 
+      SET name = $1, category = $2, description = $3
+      WHERE id = $4 AND account_id = $5
+      RETURNING *
+    `;
+    const deviceResult = await client.query(updateDeviceQuery, [
+      updateData.name, 
+      updateData.category, 
+      updateData.description, 
+      deviceId, 
+      accountId
+    ]);
+
+    if (deviceResult.rowCount === 0) {
+      throw new Error('Device not found or unauthorized');
+    }
+
+    const updateConfigQuery = `
+      UPDATE device_protocol_config 
+      SET config = $1 
+      WHERE device_id = $2
+    `;
+    await client.query(updateConfigQuery, [updateData.config, deviceId]);
+
+    await client.query('COMMIT');
+    return { success: true };
+
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
+  }
+};

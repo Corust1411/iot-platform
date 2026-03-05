@@ -90,3 +90,19 @@ export const deleteDevice = async (req: AuthRequest, res: Response) => {
     res.status(400).json({ message: error.message });
   }
 };
+
+export const updateDevice = async (req: AuthRequest, res: Response) => {
+  try {
+    const accountId = req.user?.id;
+    const deviceId = parseInt(Array.isArray(req.params.id) ? req.params.id[0] : req.params.id);
+
+    if (!accountId) return res.status(401).json({ message: 'Unauthorized' });
+
+    await deviceService.updateDeviceById(accountId, deviceId, req.body);
+    res.status(200).json({ message: 'Device updated successfully' });
+
+  } catch (error: any) {
+    console.error('Update Device Error:', error);
+    res.status(400).json({ message: error.message });
+  }
+};
