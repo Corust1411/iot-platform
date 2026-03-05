@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import * as deviceService from '../services/device.service';
+import * as nodeRedService from '../services/nodered.service';
 
 interface AuthRequest extends Request {
   user?: { id: number; role: string };
@@ -8,17 +9,40 @@ interface AuthRequest extends Request {
 export const createDevice = async (req: AuthRequest, res: Response) => {
   try {
     const accountId = req.user?.id; 
-    
     if (!accountId) {
       return res.status(401).json({ message: 'Unauthorized: User not found in token' });
     }
 
     const newDevice = await deviceService.createNewDevice(accountId, req.body);
-    res.status(201).json(newDevice);
+    
+    const payloadForPi = {
+      device_id: newDevice.id,
+      name: req.body.name,
+      category: req.body.category,
+      protocol: req.body.protocol,
+      config: req.body.config 
+    }
+    try {
+      await nodeRedService.sendDeviceToNodeRed(payloadForPi);
+      
+      return res.status(201).json({
+        message: 'Device created and provisioned to Raspberry Pi successfully',
+        device: newDevice
+      });
+
+    } catch (piError: any) {
+      console.warn('Device saved in DB, but failed to reach Raspberry Pi:', piError.message);
+      
+      return res.status(207).json({ 
+        message: 'Device saved in Database, but failed to sync with Raspberry Pi',
+        error: piError.message,
+        device: newDevice
+      });
+    }
 
   } catch (error: any) {
     console.error('Create Device Error:', error);
-    res.status(500).json({ message: 'Failed to create device', error: error.message });
+    return res.status(500).json({ message: 'Failed to create device', error: error.message });
   }
 };
 
