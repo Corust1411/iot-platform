@@ -114,7 +114,6 @@ import SideNav from '@/components/SideNav.vue'
 import { http } from '@/api/http'
 
 export default {
-  name: 'DashboardView',
   components: { TopBar, SideNav },
   data() {
     return {
