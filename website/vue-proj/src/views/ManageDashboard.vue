@@ -26,7 +26,8 @@
             <div 
               v-for="dash in dashboards" 
               :key="dash.id" 
-              class="table-row"
+              class="table-row clickable-row"
+              @click="goToDashboard(dash.id)"
             >
               <span class="fw-bold">{{ dash.name }}</span>
               <span class="text-gray">{{ dash.description || '-' }}</span>
@@ -40,10 +41,10 @@
                 </button>
                 
                 <div v-if="activeMenu === dash.id" class="overflow-menu">
-                  <button @click="openEditModal(dash)">
+                  <button @click.stop="openEditModal(dash)">
                     <span class="material-symbols-outlined">edit</span> Edit
                   </button>
-                  <button class="danger-text" @click="deleteDashboard(dash.id, dash.name)">
+                  <button class="danger-text" @click.stop="deleteDashboard(dash.id, dash.name)">
                     <span class="material-symbols-outlined">delete</span> Delete
                   </button>
                 </div>
@@ -146,6 +147,9 @@ export default {
     document.removeEventListener('click', this.closeMenu)
   },
   methods: {
+    goToDashboard(id) {
+      this.$router.push(`/dashboard/${id}`);
+    },
     toggleMenu(id) {
       this.activeMenu = this.activeMenu === id ? null : id;
     },
@@ -265,6 +269,7 @@ export default {
 .table-row { border-bottom: 1px solid #7B7B7B; transition: 0.2s; font-size: 13px; }
 .table-row:hover { background-color: #d6d8db; }
 .table-row:last-child { border-bottom: none; }
+.clickable-row { cursor: pointer; }
 
 .fw-bold { font-weight: 600; color: #1f2937; font-size: 14px; }
 .text-gray { color: #6b7280; }
