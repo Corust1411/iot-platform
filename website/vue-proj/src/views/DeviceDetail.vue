@@ -106,9 +106,13 @@
 
               </div>
             </div>
-
             <div class="footer-action">
-              <button class="edit-btn">
+              <button class="delete-btn" @click="deleteDevice">
+                <span class="material-symbols-outlined">delete</span>
+                Delete
+              </button>
+              <button class="edit-btn" @click="editDevice">
+                <span class="material-symbols-outlined">edit</span>
                 Edit Device
               </button>
             </div>
@@ -215,6 +219,25 @@ export default {
     },
     async copyTopic() {
       this.copyText(this.mqttTopic);
+    },
+    async deleteDevice() {
+      // const isConfirm = confirm(`Are you sure you want to delete "${this.device.name}"?\nThis action cannot be undone.`);
+      
+      // if (isConfirm) {
+        try {
+          await http.delete(`/devices/${this.device.id}`);
+          
+          alert('Device deleted successfully.');
+          this.$router.push('/managedevice'); 
+        } catch (error) {
+          console.error("Error deleting device:", error);
+          alert('Failed to delete device. Please try again.');
+        // }
+      }
+    },
+    editDevice() {
+      console.log('Go to edit device:', this.device.id);
+      // this.$router.push(`/edit-device/${this.device.id}`);
     }
   }
 }
@@ -388,10 +411,33 @@ export default {
 }
 
 /* Edit Button */
+/* Edit Button & Action Area */
 .footer-action {
   display: flex;
   justify-content: flex-end;
+  gap: 16px; /* เพิ่มระยะห่างระหว่างปุ่ม 2 อัน */
   margin-top: 16px;
+}
+
+.delete-btn {
+  background: white;
+  color: #FF4B4A;
+  border: 1px solid #FF4B4A;
+  padding: 10px 24px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: transform 0.2s, background-color 0.2s;
+}
+
+.delete-btn:hover {
+  background: #fef2f2;
+  transform: translateY(-2px);
 }
 
 .edit-btn {

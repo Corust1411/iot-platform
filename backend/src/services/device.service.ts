@@ -61,3 +61,33 @@ export const getDeviceById = async (accountId: number, deviceId: number) => {
   
   return result.rows[0];
 };
+
+export const deleteDeviceById = async (accountId: number, deviceId: number) => {
+  const client = await pool.connect();
+  
+  try {
+    await client.query('BEGIN');
+
+    await client.query('DELETE FROM device_protocol_config WHERE device_id = $1', [deviceId]);
+
+    const deleteDeviceQuery = `
+      DELETE FROM device 
+      WHERE id = $1 AND account_id = $2 
+      RETURNING id
+    `;
+    const result = await client.query(deleteDeviceQuery, [deviceId, accountId]);
+
+    if (result.rowCount === 0) {
+      throw new Error('Device not found or unauthorized to delete');
+    }
+
+    await client.query('COMMIT');
+    return { success: true, deletedId: deviceId };
+
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
+  }
+};
