@@ -1,4 +1,5 @@
 import { pool } from '../config/db';
+import * as nodeRedService from './nodered.service';
 
 export const createNewDevice = async (accountId: number, data: any) => {
   const client = await pool.connect();
@@ -68,24 +69,36 @@ export const deleteDeviceById = async (accountId: number, deviceId: number) => {
   try {
     await client.query('BEGIN');
 
-    await client.query('DELETE FROM device_protocol_config WHERE device_id = $1', [deviceId]);
-
-    const deleteDeviceQuery = `
-      DELETE FROM device 
-      WHERE id = $1 AND account_id = $2 
-      RETURNING id
+    // 1. ดึงข้อมูลอุปกรณ์ออกมาก่อน เพื่อดู Protocol และ Config
+    const getDeviceQuery = `
+      SELECT d.protocol, c.config
+      FROM device d
+      LEFT JOIN device_protocol_config c ON d.id = c.device_id
+      WHERE d.id = $1 AND d.account_id = $2
     `;
-    const result = await client.query(deleteDeviceQuery, [deviceId, accountId]);
+    const deviceResult = await client.query(getDeviceQuery, [deviceId, accountId]);
 
-    if (result.rowCount === 0) {
+    if (deviceResult.rowCount === 0) {
       throw new Error('Device not found or unauthorized to delete');
     }
 
-    await client.query('COMMIT');
+    const device = deviceResult.rows[0];
+
+    if (device.protocol === 'wifi' && device.config?.macAddress) {
+      await nodeRedService.removeWifiWhitelist(device.config.macAddress);
+    } 
+    else if (device.protocol === 'lorawan' && device.config?.devEui) {
+      await nodeRedService.removeLorawanDevice(device.config.devEui);
+    }
+    await client.query('DELETE FROM device_protocol_config WHERE device_id = $1', [deviceId]);
+
+    await client.query('DELETE FROM device WHERE id = $1 AND account_id = $2', [deviceId, accountId]);
+
+    await client.query('COMMIT'); 
     return { success: true, deletedId: deviceId };
 
   } catch (error) {
-    await client.query('ROLLBACK');
+    await client.query('ROLLBACK'); 
     throw error;
   } finally {
     client.release();

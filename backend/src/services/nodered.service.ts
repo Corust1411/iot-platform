@@ -88,3 +88,37 @@ export const getZigbeeDevicesFromPi = async () => {
     throw new Error(error.response?.data?.message || 'Failed to fetch zigbee devices');
   }
 };
+
+export const removeWifiWhitelist = async (macAddress: string) => {
+  const endpoint = `${NODE_RED_URL}/api/wifi/whitelist/remove`;
+  try {
+    const payload = { macAddress };
+    const encryptedData = encryptPayload(payload);
+
+    await axios.delete(endpoint, {
+      headers: { 'x-api-key': NODE_RED_API_KEY },
+      data: { payload: encryptedData }, 
+      timeout: 5000
+    });
+    console.log(`[Node-RED] Removed Wi-Fi MAC: ${macAddress}`);
+  } catch (error: any) {
+    console.error(`[Node-RED] Failed to remove Wi-Fi whitelist: ${error.message}`);
+  }
+};
+
+export const removeLorawanDevice = async (devEui: string) => {
+  const endpoint = `${NODE_RED_URL}/api/lorawan/remove`;
+  try {
+    const payload = { devEui };
+    const encryptedData = encryptPayload(payload);
+
+    await axios.delete(endpoint, {
+      headers: { 'x-api-key': NODE_RED_API_KEY },
+      data: { payload: encryptedData },
+      timeout: 5000
+    });
+    console.log(`[Node-RED] Removed LoRaWAN DevEUI: ${devEui}`);
+  } catch (error: any) {
+    console.error(`[Node-RED] Failed to remove LoRaWAN device: ${error.message}`);
+  }
+};
