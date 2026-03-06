@@ -37,22 +37,33 @@ const router = createRouter({
       path: '/device/:id',
       name: 'DeviceDetail',
       component: () => import('../views/DeviceDetail.vue'),
+    },
+    {
+      path: '/manage-account',
+      name: 'ManageAccount',
+      component: () => import('../views/ManageAccount.vue'),
+      meta: { 
+        requiresAuth: true, 
+        requiresAdmin: true
+      }
     }
   ],
 });
 
 router.beforeEach((to, from, next) => {
   const token = localStorage.getItem('token');
+  const role = localStorage.getItem('role');
 
-  if (to.path === '/' && token) {
-    next('/managedevice'); 
-  } 
-  else if (to.path !== '/' && !token) {
-    next('/'); 
-  } 
-  else {
-    next();
+  if (to.meta.requiresAuth && !token) {
+    return next('/login');
   }
+  if (to.meta.requiresAdmin && role !== 'admin') {
+    alert('Access Denied: Admins only');
+    return next('/dashboard');
+  }
+  
+  next();
+  
 });
 
 export default router;
