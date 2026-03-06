@@ -70,6 +70,7 @@ export default {
 
         localStorage.setItem('token', res.data.token);
         localStorage.setItem('username', res.data.user.username);
+        localStorage.setItem('role', res.data.role);
         
         this.$router.push('/managedevice');
       } catch (err) {

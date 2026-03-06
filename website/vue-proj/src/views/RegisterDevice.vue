@@ -1,9 +1,9 @@
 <template>
   <div class="app-wrapper">
-    <TopBar :username="username" />
+    <TopNavBar :username="username" />
 
     <div class="layout">
-      <SideNav />
+      <SideBarNav />
 
       <div class="content">
         <div class="page-header">
@@ -280,12 +280,12 @@
 </template>
 
 <script>
-import TopBar from '@/components/TopBar.vue'
-import SideNav from '@/components/SideNav.vue'
+import TopNavBar from '@/components/TopNavBar.vue'
+import Bar from '@/components/Bar.vue'
 import { http } from '@/api/http'
 
 export default {
-  components: { TopBar, SideNav },
+  components: { TopNavBar, Bar },
   data() {
     return {
       username: 'Unknown User',
