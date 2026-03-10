@@ -53,3 +53,49 @@ export const deleteDashboard = async (req: AuthRequest, res: Response) => {
     res.status(400).json({ message: error.message });
   }
 };
+
+export const getDashboardDetails = async (req: AuthRequest, res: Response) => {
+  try {
+    const accountId = req.user?.id;
+    const dashboardId = parseInt(Array.isArray(req.params.id) ? req.params.id[0] : req.params.id);
+    if (!accountId) return res.status(401).json({ message: 'Unauthorized' });
+
+    const dashboard = await dashboardService.getDashboardById(accountId, dashboardId);
+    if (!dashboard) return res.status(404).json({ message: 'Dashboard not found' });
+
+    res.status(200).json(dashboard);
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const getDashboardDevices = async (req: AuthRequest, res: Response) => {
+  try {
+    const dashboardId = parseInt(Array.isArray(req.params.id) ? req.params.id[0] : req.params.id);
+    const devices = await dashboardService.getDashboardDevices(dashboardId);
+    res.status(200).json(devices);
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+}
+
+export const addDeviceToDashboard = async (req: AuthRequest, res: Response) => {
+  try {    
+    const dashboardId = parseInt(Array.isArray(req.params.id) ? req.params.id[0] : req.params.id);
+    const { deviceId, alias } = req.body;
+    const result = await dashboardService.addDeviceToDashboard(dashboardId, deviceId, alias);
+    res.status(201).json(result);
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+}
+
+export const removeDeviceFromDashboard = async (req: AuthRequest, res: Response) => {
+  try {
+    const dashboardDeviceId = parseInt(Array.isArray(req.params.id) ? req.params.id[0] : req.params.id);
+    await dashboardService.removeDeviceFromDashboard(dashboardDeviceId);
+    res.status(200).json({ message: 'Device removed from dashboard successfully' });
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+}

@@ -8,5 +8,9 @@ router.post('/', verifyToken, dashboardController.createDashboard);
 router.get('/', verifyToken, dashboardController.getDashboards);
 router.put('/:id', verifyToken, dashboardController.updateDashboard);
 router.delete('/:id', verifyToken, dashboardController.deleteDashboard);
+router.get('/:id', verifyToken, dashboardController.getDashboardDetails);
+router.get('/:id/devices', verifyToken, dashboardController.getDashboardDevices);
+router.post('/:id/devices', verifyToken, dashboardController.addDeviceToDashboard);
+router.delete('/:id/devices/:deviceId', verifyToken, dashboardController.removeDeviceFromDashboard);
 
 export default router;
