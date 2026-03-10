@@ -3,11 +3,9 @@
 </template>
 
 <script setup lang="ts">
-// ไม่ต้องใส่อะไรเพิ่มเติมในนี้สำหรับตอนนี้
 </script>
 
 <style>
-/* สามารถใส่ Global CSS ของคุณตรงนี้ได้ (ถ้ามี) */
 body {
   margin: 0;
   font-family: "Plus Jakarta Sans", sans-serif;

@@ -172,7 +172,6 @@ export default {
   },
   computed: {
     mqttTopic() {
-      // ใช้ชื่อจาก editForm ถ้ายอยู่ในโหมดแก้ไข จะได้เห็น Topic เปลี่ยนแบบ Real-time
       const targetDevice = this.isEditing ? this.editForm : this.device;
       if (!targetDevice.name) return '';
       const protocol = (targetDevice.protocol || 'unknown').toLowerCase();
@@ -238,8 +237,6 @@ export default {
       }
     },
     async deleteDevice() {
-      // const isConfirm = confirm(`Are you sure you want to delete "${this.device.name}"?\nThis action cannot be undone.`);
-      // if (isConfirm) {
         try {
           await http.delete(`/devices/${this.device.id}`);
           alert('Device deleted successfully.');
@@ -248,7 +245,6 @@ export default {
           console.error("Error deleting device:", error);
           alert('Failed to delete device. Please try again.');
         }
-      // }
     },
     async copyText(text) {
       if (!text || text === '-') return;

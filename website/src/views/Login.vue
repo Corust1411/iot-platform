@@ -86,7 +86,6 @@ export default {
 </script>
 
 <style scoped>
-/* ตั้งค่าความคมชัดให้ไอคอนที่โหลดมา */
 .material-symbols-outlined {
   font-family: 'Material Symbols Outlined', sans-serif;
   font-variation-settings:
@@ -94,7 +93,7 @@ export default {
     'wght' 400,
     'GRAD' 0,
     'opsz' 48;
-  font-size: 70px; /* ขนาดไอคอนใหญ่พอดีวงกลม */
+  font-size: 70px; 
 }
 
 /* ===== Background ===== */
@@ -104,7 +103,6 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  /* เรียกใช้งานตัวอักษรที่โหลดมาให้ครอบคลุมทั้งหน้า */
   font-family: 'Plus Jakarta Sans', sans-serif;
 }
 

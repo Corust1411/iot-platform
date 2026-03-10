@@ -281,11 +281,11 @@
 
 <script>
 import TopNavBar from '@/components/TopNavBar.vue'
-import Bar from '@/components/Bar.vue'
+import SideBarNav from '@/components/SideBarNav.vue'
 import { http } from '@/api/http'
 
 export default {
-  components: { TopNavBar, Bar },
+  components: { TopNavBar, SideBarNav },
   data() {
     return {
       username: 'Unknown User',
@@ -302,9 +302,8 @@ export default {
         devEui: '',
         joinEui: '',
         appKey: '',
-        ieeeAddr: '' // เพิ่มมารองรับ Zigbee
+        ieeeAddr: ''
       },
-      // ตัวแปรสำหรับ Zigbee Scan
       zigbeeDevices: [],
       isLoadingZigbee: false,
       isScanning: false,
@@ -319,7 +318,6 @@ export default {
     }
   },
   beforeUnmount() {
-    // ล้างเวลาทิ้งเมื่อออกจากหน้า
     if (this.scanTimer) clearInterval(this.scanTimer);
   },
   methods: {
@@ -338,7 +336,6 @@ export default {
           this.showError = true
           return
         }
-        // ถ้าเป็น Zigbee ให้โหลดข้อมูลเลยตอนกด Next
         if (this.form.protocol === 'zigbee' && this.zigbeeDevices.length === 0) {
           this.fetchZigbeeDevices();
         }
@@ -364,7 +361,6 @@ export default {
         this.fetchZigbeeDevices();
       }
     },
-    // --- Zigbee Methods ---
     async scanZigbee() {
       this.isScanning = true;
       this.scanCountdown = 60;
@@ -389,7 +385,7 @@ export default {
     stopScan() {
       this.isScanning = false;
       clearInterval(this.scanTimer);
-      this.fetchZigbeeDevices(); // โหลดข้อมูลอัตโนมัติเมื่อครบเวลา
+      this.fetchZigbeeDevices();
     },
     async fetchZigbeeDevices() {
       this.isLoadingZigbee = true;
@@ -403,12 +399,10 @@ export default {
       }
     },
     selectZigbeeDevice(zDevice) {
-      // ดักจับว่าถ้ากดปุ่มของอุปกรณ์ตัวเดิมที่เลือกไว้อยู่แล้ว ให้เคลียร์ค่าทิ้ง (Deselect)
       if (this.form.ieeeAddr === zDevice.ieeeAddr) {
         this.form.ieeeAddr = ''; 
         this.triggerToast('Device deselected.');
       } 
-      // ถ้ากดยังอุปกรณ์ตัวใหม่ ให้เลือกอุปกรณ์นั้น (Select)
       else {
         this.form.ieeeAddr = zDevice.ieeeAddr;
         if (!this.form.name.trim()) {
@@ -418,9 +412,7 @@ export default {
         this.showError = false;
       }
     },
-    // -----------------------
     async submitDevice() {
-      // Validate ก่อน Submit
       if (this.form.protocol === 'wifi') {
         if (!this.form.macAddress.trim()) {
           this.showError = true; return;
@@ -436,7 +428,6 @@ export default {
       }
       this.showError = false;
 
-      // จัดเตรียม Config Data
       const configData = {};
       if (this.form.protocol === 'wifi') {
         configData.macAddress = this.form.macAddress;

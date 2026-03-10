@@ -209,7 +209,6 @@ export default {
     },
     openEditModal(acc) {
       this.isEditing = true;
-      // ก๊อปปี้ข้อมูลเก่ามาแสดง (รหัสผ่านเว้นว่างไว้)
       this.form = { 
         id: acc.id, 
         first_name: acc.first_name, 
@@ -227,7 +226,6 @@ export default {
       this.showModal = false;
     },
     async saveAccount() {
-      // Validate เบื้องต้น
       if (!this.form.first_name || !this.form.last_name || !this.form.username || !this.form.email) {
         this.showError = true; return;
       }
@@ -239,7 +237,6 @@ export default {
       
       try {
         const payload = { ...this.form };
-        // ถ้าเป็นการ Edit และไม่ได้กรอก Password ใหม่ ให้ลบฟิลด์ password ทิ้ง Backend จะได้ไม่อัปเดต
         if (this.isEditing && !payload.password) {
           delete payload.password;
         }
@@ -262,7 +259,6 @@ export default {
     async deleteAccount(id, username) {
       this.activeMenu = null;
       
-      // ป้องกันการลบตัวเอง (เช็คจากชื่อที่ Login อยู่)
       if (username === this.username) {
         alert("You cannot delete your own account while logged in!");
         return;
