@@ -7,7 +7,7 @@
 
       <div class="content">
         <div class="page-header">
-          <button class="back-btn" @click="$router.push('/managedevice')">
+          <button class="back-btn" @click="$router.push('/manage-device')">
             <span class="material-symbols-outlined">arrow_back</span>
           </button>
           <h1 class="page-title">Register device</h1>
@@ -70,7 +70,7 @@
             </div>
 
             <div class="form-actions space-between">
-              <button class="cancel-btn" @click="$router.push('/managedevice')">cancel</button>
+              <button class="cancel-btn" @click="$router.push('/manage-device')">cancel</button>
               <button class="next-btn" @click="handleNext">next</button>
             </div>
           </div>
@@ -458,7 +458,7 @@ export default {
 
       try {
         await http.post('/devices', payload);
-        this.$router.push('/managedevice'); 
+        this.$router.push('/manage-device'); 
       } catch (err) {
         console.error('Failed to create device:', err);
         const errorMsg = err.response?.data?.message || 'Unknown error occurred';

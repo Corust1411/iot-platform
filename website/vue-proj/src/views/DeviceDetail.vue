@@ -7,7 +7,7 @@
 
       <div class="content">
         <div class="page-header">
-          <button class="back-btn" @click="$router.push('/managedevice')">
+          <button class="back-btn" @click="$router.push('/manage-device')">
             <span class="material-symbols-outlined">arrow_back</span>
           </button>
           <h1 class="page-title">{{ isEditing ? 'Edit Device' : (device.name || 'Loading...') }}</h1>
@@ -215,7 +215,7 @@ export default {
         console.error("Error fetching device details:", error);
         alert("Failed to load device data or Device not found.");
         this.isLoading = false;
-        this.$router.push('/managedevice'); 
+        this.$router.push('/manage-device'); 
       }
     },
     startEdit() {
@@ -243,7 +243,7 @@ export default {
         try {
           await http.delete(`/devices/${this.device.id}`);
           alert('Device deleted successfully.');
-          this.$router.push('/managedevice');
+          this.$router.push('/manage-device');
         } catch (error) {
           console.error("Error deleting device:", error);
           alert('Failed to delete device. Please try again.');
