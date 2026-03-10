@@ -31,7 +31,6 @@ const router = useRouter();
 const currentUsername = ref<string>('Unknown User');
 
 onMounted(() => {
-  // ดึง username จาก localStorage มาแสดงผล
   const storedUser = localStorage.getItem('username');
   if (storedUser) {
     currentUsername.value = storedUser;
@@ -39,11 +38,9 @@ onMounted(() => {
 });
 
 const handleLogout = () => {
-  // ลบข้อมูล Session ทั้งหมด
   localStorage.removeItem('token');
   localStorage.removeItem('username');
   
-  // บังคับเปลี่ยนหน้ากลับไปที่ Login
   router.push('/');
 };
 </script>

@@ -9,7 +9,7 @@ const router = createRouter({
       component: () => import('../views/Login.vue'), 
     },
     {
-      path: '/managedevice',
+      path: '/manage-device',
       name: 'ManageDevice',
       component: () => import('../views/ManageDevice.vue'), 
     },
@@ -39,13 +39,16 @@ const router = createRouter({
       component: () => import('../views/DeviceDetail.vue'),
     },
     {
-      path: '/manageaccount',
+      path: '/manage-account',
       name: 'ManageAccount',
       component: () => import('../views/ManageAccount.vue'),
-      meta: { 
-        requiresAuth: true, 
-        requiresAdmin: true
-      }
+      meta: { requiresAuth: true, requiresAdmin: true }
+    },
+    {
+      path: '/register-account',
+      name: 'RegisterAccount',
+      component: () => import('../views/RegisterAccount.vue'),
+      meta: { requiresAuth: true, requiresAdmin: true }
     }
   ],
 });
@@ -63,7 +66,6 @@ router.beforeEach((to, from, next) => {
   }
   
   next();
-  
 });
 
 export default router;

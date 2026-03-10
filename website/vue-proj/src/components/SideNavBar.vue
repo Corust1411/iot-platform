@@ -1,7 +1,7 @@
 <template>
   <aside class="sidebar">
     <nav class="nav-menu">
-      <router-link to="/managedevice" class="nav-item">
+      <router-link to="/manage-device" class="nav-item">
         <span class="material-symbols-outlined nav-icon">home</span>
         <span class="nav-text">Manage Device</span>
       </router-link>
