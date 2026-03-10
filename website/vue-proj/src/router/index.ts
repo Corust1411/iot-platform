@@ -19,9 +19,9 @@ const router = createRouter({
       component: () => import('../views/Mqtt.vue'),
     },
     {
-      path: '/dashboard',
+      path: '/managedashboard',
       name: 'Dashboard',
-      component: () => import('../views/Dashboard.vue'), 
+      component: () => import('../views/ManageDashboard.vue'), 
     },
     {
       path: '/profile',
@@ -49,6 +49,11 @@ const router = createRouter({
       name: 'RegisterAccount',
       component: () => import('../views/RegisterAccount.vue'),
       meta: { requiresAuth: true, requiresAdmin: true }
+    },
+    {
+      path: '/dashboard/:id',
+      name: 'DashboardDetail',
+      component: () => import('../views/DashboardDetail.vue'),
     }
   ],
 });

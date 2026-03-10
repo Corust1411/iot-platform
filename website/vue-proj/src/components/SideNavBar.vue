@@ -11,7 +11,7 @@
         <span class="nav-text">MQTT Client</span>
       </router-link>
 
-      <router-link to="/dashboard" class="nav-item">
+      <router-link to="/managedashboard" class="nav-item">
         <span class="material-symbols-outlined nav-icon">monitor</span>
         <span class="nav-text">Dashboard</span>
       </router-link>
