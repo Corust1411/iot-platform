@@ -70,8 +70,9 @@ export default {
 
         localStorage.setItem('token', res.data.token);
         localStorage.setItem('username', res.data.user.username);
+        localStorage.setItem('role', res.data.role);
         
-        this.$router.push('/managedevice');
+        this.$router.push('/manage-device');
       } catch (err) {
         this.error = err.response?.data?.message || 'Invalid username or password';
       } finally {
