@@ -1,13 +1,13 @@
 <template>
   <div class="app-wrapper">
-    <TopBar :username="username" />
+    <TopNavBar :username="username" />
 
     <div class="layout">
-      <SideNav />
+      <SideNavBar />
 
       <div class="content">
         <div class="page-header">
-          <button class="back-btn" @click="$router.push('/managedevice')">
+          <button class="back-btn" @click="$router.push('/manage-device')">
             <span class="material-symbols-outlined">arrow_back</span>
           </button>
           <h1 class="page-title">{{ isEditing ? 'Edit Device' : (device.name || 'Loading...') }}</h1>
@@ -146,12 +146,12 @@
 </template>
 
 <script>
-import TopBar from '@/components/TopBar.vue'
-import SideNav from '@/components/SideNav.vue'
+import TopNavBar from '@/components/TopNavBar.vue'
+import SideNavBar from '@/components/SideNavBar.vue'
 import { http } from '@/api/http'
 
 export default {
-  components: { TopBar, SideNav },
+  components: { TopNavBar, SideNavBar },
   data() {
     return {
       username: 'Unknown User',
@@ -215,7 +215,7 @@ export default {
         console.error("Error fetching device details:", error);
         alert("Failed to load device data or Device not found.");
         this.isLoading = false;
-        this.$router.push('/managedevice'); 
+        this.$router.push('/manage-device'); 
       }
     },
     startEdit() {
@@ -243,7 +243,7 @@ export default {
         try {
           await http.delete(`/devices/${this.device.id}`);
           alert('Device deleted successfully.');
-          this.$router.push('/managedevice');
+          this.$router.push('/manage-device');
         } catch (error) {
           console.error("Error deleting device:", error);
           alert('Failed to delete device. Please try again.');

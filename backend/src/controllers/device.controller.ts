@@ -107,12 +107,8 @@ export const updateDevice = async (req: AuthRequest, res: Response) => {
   }
 };
 
-// ... (โค้ดเดิม) ...
-
-// Controller สำหรับกดปุ่ม Scan
 export const scanZigbeeNetwork = async (req: AuthRequest, res: Response) => {
   try {
-    // สั่งเปิด Permit Join เป็นเวลา 60 วินาที
     await nodeRedService.permitJoinZigbee(60);
     return res.status(200).json({ message: 'Zigbee permit join enabled for 60 seconds.' });
   } catch (error: any) {
@@ -120,21 +116,14 @@ export const scanZigbeeNetwork = async (req: AuthRequest, res: Response) => {
   }
 };
 
-// Controller สำหรับดึงและกรองอุปกรณ์
 export const discoverUnregisteredZigbeeDevices = async (req: AuthRequest, res: Response) => {
   try {
     const accountId = req.user?.id;
     if (!accountId) return res.status(401).json({ message: 'Unauthorized' });
 
-    // 1. ไปดูดข้อมูลมาจาก Pi (ได้เป็น Array ของอุปกรณ์)
     const piDevices = await nodeRedService.getZigbeeDevicesFromPi();
-    
-    // 2. ไปดูด ieeeAddr จาก Database ของเรา
     const registeredAddrs = await deviceService.getRegisteredZigbeeIeeeAddrs(accountId);
-
-    // 3. กรองเอาเฉพาะตัวที่ Pi มี แต่ Database ยังไม่มี (ยังไม่ได้ลงทะเบียน)
     const unregisteredDevices = piDevices.filter((piDevice: any) => {
-      // ตรวจสอบว่า ieeeAddr ของ Pi ไม่ตรงกับใน Database (แปลงตัวพิมพ์เล็กเพื่อความชัวร์)
       return !registeredAddrs.some(
         (regAddr) => regAddr.toLowerCase() === piDevice.ieeeAddr.toLowerCase()
       );

@@ -9,7 +9,7 @@ const router = createRouter({
       component: () => import('../views/Login.vue'), 
     },
     {
-      path: '/managedevice',
+      path: '/manage-device',
       name: 'ManageDevice',
       component: () => import('../views/ManageDevice.vue'), 
     },
@@ -39,6 +39,18 @@ const router = createRouter({
       component: () => import('../views/DeviceDetail.vue'),
     },
     {
+      path: '/manage-account',
+      name: 'ManageAccount',
+      component: () => import('../views/ManageAccount.vue'),
+      meta: { requiresAuth: true, requiresAdmin: true }
+    },
+    {
+      path: '/register-account',
+      name: 'RegisterAccount',
+      component: () => import('../views/RegisterAccount.vue'),
+      meta: { requiresAuth: true, requiresAdmin: true }
+    },
+    {
       path: '/dashboard/:id',
       name: 'DashboardDetail',
       component: () => import('../views/DashboardDetail.vue'),
@@ -48,16 +60,17 @@ const router = createRouter({
 
 router.beforeEach((to, from, next) => {
   const token = localStorage.getItem('token');
+  const role = localStorage.getItem('role');
 
-  if (to.path === '/' && token) {
-    next('/managedevice'); 
-  } 
-  else if (to.path !== '/' && !token) {
-    next('/'); 
-  } 
-  else {
-    next();
+  if (to.meta.requiresAuth && !token) {
+    return next('/login');
   }
+  if (to.meta.requiresAdmin && role !== 'admin') {
+    alert('Access Denied: Admins only');
+    return next('/dashboard');
+  }
+  
+  next();
 });
 
 export default router;

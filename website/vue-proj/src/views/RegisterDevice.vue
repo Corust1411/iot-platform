@@ -1,13 +1,13 @@
 <template>
   <div class="app-wrapper">
-    <TopBar :username="username" />
+    <TopNavBar :username="username" />
 
     <div class="layout">
-      <SideNav />
+      <SideBarNav />
 
       <div class="content">
         <div class="page-header">
-          <button class="back-btn" @click="$router.push('/managedevice')">
+          <button class="back-btn" @click="$router.push('/manage-device')">
             <span class="material-symbols-outlined">arrow_back</span>
           </button>
           <h1 class="page-title">Register device</h1>
@@ -70,7 +70,7 @@
             </div>
 
             <div class="form-actions space-between">
-              <button class="cancel-btn" @click="$router.push('/managedevice')">cancel</button>
+              <button class="cancel-btn" @click="$router.push('/manage-device')">cancel</button>
               <button class="next-btn" @click="handleNext">next</button>
             </div>
           </div>
@@ -280,12 +280,12 @@
 </template>
 
 <script>
-import TopBar from '@/components/TopBar.vue'
-import SideNav from '@/components/SideNav.vue'
+import TopNavBar from '@/components/TopNavBar.vue'
+import Bar from '@/components/Bar.vue'
 import { http } from '@/api/http'
 
 export default {
-  components: { TopBar, SideNav },
+  components: { TopNavBar, Bar },
   data() {
     return {
       username: 'Unknown User',
@@ -458,7 +458,7 @@ export default {
 
       try {
         await http.post('/devices', payload);
-        this.$router.push('/managedevice'); 
+        this.$router.push('/manage-device'); 
       } catch (err) {
         console.error('Failed to create device:', err);
         const errorMsg = err.response?.data?.message || 'Unknown error occurred';
