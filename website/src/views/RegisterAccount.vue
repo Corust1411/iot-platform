@@ -131,7 +131,6 @@ export default {
   },
   methods: {
     async submitAccount() {
-      // ตรวจสอบข้อมูลก่อนส่ง
       if (!this.form.first_name || !this.form.last_name || !this.form.username || !this.form.email || !this.form.password) {
         this.showError = true;
         return;
@@ -141,7 +140,7 @@ export default {
       try {
         await http.post('/accounts', this.form);
         alert('Account created successfully!');
-        this.$router.push('/manage-account'); // สร้างเสร็จให้เด้งกลับไปหน้าตาราง
+        this.$router.push('/manage-account');
       } catch (error) {
         console.error('Failed to create account:', error);
         alert(error.response?.data?.message || 'Failed to create account');

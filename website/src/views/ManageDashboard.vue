@@ -204,7 +204,7 @@ export default {
         }
 
         this.closeModal();
-        await this.fetchDashboards(); // รีเฟรชลิสต์ใหม่
+        await this.fetchDashboards();
       } catch (error) {
         console.error('Failed to save dashboard:', error);
         alert('An error occurred while saving the dashboard.');
@@ -217,7 +217,7 @@ export default {
         try {
           await http.delete(`/dashboards/${id}`);
           this.triggerToast('Dashboard deleted.');
-          await this.fetchDashboards(); // รีเฟรชลิสต์ใหม่หลังจากลบ
+          await this.fetchDashboards();
         } catch (error) {
           console.error('Failed to delete dashboard:', error);
           alert('Failed to delete dashboard.');

@@ -1,0 +1,20 @@
+{
+  "name": "iot-platform",
+  "version": "1.0.0",
+  "description": "```bash\r npm run dev\r # or\r yarn dev\r ```",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+  "website": "npm run dev --prefix website",
+  "backend": "npm run dev --prefix backend",
+  "dev": "concurrently \"npm run website\" \"npm run backend\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}
