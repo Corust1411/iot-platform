@@ -20,9 +20,34 @@
         <span class="material-symbols-outlined nav-icon">settings_account_box</span>
         <span class="nav-text">Profile Setting</span>
       </router-link>
+
+      <router-link 
+        v-if="userRole === 'admin'" 
+        to="/manage-account" 
+        class="nav-item admin-only"
+      >
+        <span class="material-symbols-outlined">manage_accounts</span>
+        <span class="nav-text">Profile Setting</span>
+      </router-link>
     </nav>
   </aside>
 </template>
+
+<script>
+export default {
+  data() {
+    return {
+      userRole: 'user'
+    }
+  },
+  mounted() {
+    const storedRole = localStorage.getItem('role');
+    if (storedRole) {
+      this.userRole = storedRole;
+    }
+  }
+}
+</script>
 
 <style scoped>
 .sidebar {
@@ -57,14 +82,13 @@
   gap: 8px;
 }
 
-/* สไตล์พื้นฐานของเมนู (สถานะปกติ: สีเทา) */
 .nav-item {
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 12px 16px;
   text-decoration: none;
-  color: #6b7280; /* สีเทา */
+  color: #6b7280;
   border-radius: 10px;
   transition: all 0.2s ease;
 }
@@ -85,21 +109,20 @@
 }
 
 .nav-item.router-link-active {
-  background-color: #fff7ed; /* พื้นหลังสีแสดอ่อนๆ */
-  color: #FF4B4A; /* สีแสด */
+  background-color: #fff7ed;
+  color: #FF4B4A;
   position: relative;
 }
 
-/* เพิ่มแถบสีแสดด้านซ้ายเพื่อความชัดเจน */
 .nav-item.router-link-active::before {
   content: '';
   position: absolute;
-  left: -12px; /* ขยับไปชิดขอบ Sidebar */
+  left: -12px;
   top: 50%;
   transform: translateY(-50%);
   height: 60%;
   width: 4px;
-  background-color: #FF4B4A; /* สีแสด */
+  background-color: #FF4B4A;
   border-radius: 0 4px 4px 0;
 }
 </style>

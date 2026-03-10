@@ -39,7 +39,7 @@ const router = createRouter({
       component: () => import('../views/DeviceDetail.vue'),
     },
     {
-      path: '/manage-account',
+      path: '/manageaccount',
       name: 'ManageAccount',
       component: () => import('../views/ManageAccount.vue'),
       meta: { 
