@@ -78,3 +78,22 @@ export const removeDeviceFromDashboard = async (dashboardDeviceId: number) => {
   const result = await pool.query(query, [dashboardDeviceId]);
   return result.rows[0];
 };
+
+export const createDashboardWidget = async (dashboardId: number, data: any) => {
+  const query = `
+    INSERT INTO dashboard_widget (dashboard_id, device_id, title, type, data_key, config)
+    VALUES ($1, $2, $3, $4, $5, $6)
+    RETURNING *;
+  `;
+  const values = [
+    dashboardId,
+    data.device_id,
+    data.title,
+    data.type,
+    data.data_key,
+    data.config || {}
+  ];
+  
+  const result = await pool.query(query, values);
+  return result.rows[0];
+};

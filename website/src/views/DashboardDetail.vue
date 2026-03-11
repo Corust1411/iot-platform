@@ -30,7 +30,7 @@
             </span>
           </div>
           <div class="toolbar-actions">
-            <button class="add-widget-btn">
+            <button class="add-widget-btn" @click="$router.push(`/dashboard/${$route.params.id}/create-widget`)">
               <span class="material-symbols-outlined">add</span>
               Add widget
             </button>

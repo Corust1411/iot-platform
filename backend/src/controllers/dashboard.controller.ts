@@ -99,3 +99,14 @@ export const removeDeviceFromDashboard = async (req: AuthRequest, res: Response)
     res.status(500).json({ message: error.message });
   }
 }
+
+export const createDashboardWidget = async (req: AuthRequest, res: Response) => {
+  try {
+    const dashboardId = parseInt(Array.isArray(req.params.id) ? req.params.id[0] : req.params.id);
+    const widgetData = req.body;
+    const widget = await dashboardService.createDashboardWidget(dashboardId, widgetData);
+    res.status(201).json(widget);
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};

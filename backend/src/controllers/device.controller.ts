@@ -139,3 +139,14 @@ export const discoverUnregisteredZigbeeDevices = async (req: AuthRequest, res: R
     return res.status(500).json({ message: 'Failed to discover devices', error: error.message });
   }
 };
+
+export const getDeviceTelemetryKeys = async (req: AuthRequest, res: Response) => {
+  try {
+    const deviceId = parseInt(Array.isArray(req.params.id) ? req.params.id[0] : req.params.id);
+    const keys = await deviceService.getDeviceTelemetryKeys(deviceId);
+    res.status(200).json({ telemetryKeys: keys });
+  } catch (error: any) {
+    console.error('Get Telemetry Keys Error:', error);
+    res.status(500).json({ message: 'Failed to get telemetry keys', error: error.message });
+  }
+}

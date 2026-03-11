@@ -12,5 +12,6 @@ router.get('/:id', verifyToken, dashboardController.getDashboardDetails);
 router.get('/:id/devices', verifyToken, dashboardController.getDashboardDevices);
 router.post('/:id/devices', verifyToken, dashboardController.addDeviceToDashboard);
 router.delete('/:id/devices/:deviceId', verifyToken, dashboardController.removeDeviceFromDashboard);
+router.post('/api/dashboards/:id/widgets', verifyToken, dashboardController.createDashboardWidget);
 
 export default router;

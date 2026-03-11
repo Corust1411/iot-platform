@@ -13,4 +13,6 @@ router.put('/:id', verifyToken, deviceController.updateDevice);
 router.post('/zigbee/permit-join', verifyToken, deviceController.scanZigbeeNetwork);
 router.get('/zigbee/discover', verifyToken, deviceController.discoverUnregisteredZigbeeDevices);
 
+router.get('/api/devices/:id/keys', verifyToken, deviceController.getDeviceTelemetryKeys);
+
 export default router;

@@ -183,3 +183,9 @@ export const getRegisteredZigbeeIeeeAddrs = async (accountId: number): Promise<s
     .map(row => row.ieee_addr)
     .filter(addr => addr != null);
 };
+
+export const getDeviceTelemetryKeys = async (deviceId: number) => {
+  const query = `SELECT DISTINCT key FROM device_telemetry WHERE device_id = $1`;
+  const result = await pool.query(query, [deviceId]);
+  return result.rows.map(row => row.key);
+};
