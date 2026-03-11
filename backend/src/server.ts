@@ -1,5 +1,6 @@
 import app from './app';
 import { testConnection } from './config/db';
+import { initMqttClient } from './services/mqtt.service';
 
 const PORT = 5000;
 
@@ -8,6 +9,7 @@ const startServer = async () => {
 
   app.listen(PORT, () => {
     console.log(`🚀 Server running on http://localhost:${PORT}`);
+    initMqttClient();
   });
 };
 
