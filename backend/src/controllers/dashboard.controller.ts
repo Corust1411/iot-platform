@@ -80,22 +80,28 @@ export const getDashboardDevices = async (req: AuthRequest, res: Response) => {
 }
 
 export const addDeviceToDashboard = async (req: AuthRequest, res: Response) => {
-  try {    
+  try {
     const dashboardId = parseInt(Array.isArray(req.params.id) ? req.params.id[0] : req.params.id);
-    const { deviceId, alias } = req.body;
-    const result = await dashboardService.addDeviceToDashboard(dashboardId, deviceId, alias);
+    const { device_id, alias } = req.body;
+    if (!device_id) {
+      return res.status(400).json({ message: 'Device ID is required' });
+    }
+    const result = await dashboardService.addDeviceToDashboard(dashboardId, device_id, alias);
     res.status(201).json(result);
   } catch (error: any) {
-    res.status(500).json({ message: error.message });
+    console.error("Add Device to Dashboard Error:", error);
+    res.status(500).json({ message: 'Internal server error while linking device' });
   }
-}
+};
 
 export const removeDeviceFromDashboard = async (req: AuthRequest, res: Response) => {
   try {
-    const dashboardDeviceId = parseInt(Array.isArray(req.params.id) ? req.params.id[0] : req.params.id);
+    const paramId = req.params.deviceId;
+    const dashboardDeviceId = parseInt(paramId as string, 10);
     await dashboardService.removeDeviceFromDashboard(dashboardDeviceId);
     res.status(200).json({ message: 'Device removed from dashboard successfully' });
   } catch (error: any) {
+    console.error("Delete Linked Device Error:", error.message);
     res.status(500).json({ message: error.message });
   }
 }

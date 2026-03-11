@@ -12,10 +12,22 @@ export const createDashboard = async (accountId: number, name: string, descripti
 
 export const getDashboardsByAccountId = async (accountId: number) => {
   const query = `
-    SELECT id, name, description, created_at
-    FROM dashboard
-    WHERE account_id = $1
-    ORDER BY created_at DESC;
+    SELECT 
+      d.id, 
+      d.name, 
+      d.description, 
+      d.created_at,
+      COALESCE(
+        json_agg(
+          json_build_object('alias', dd.alias, 'device_name', dev.name)
+        ) FILTER (WHERE dd.id IS NOT NULL), '[]'
+      ) as devices
+    FROM dashboard d
+    LEFT JOIN dashboard_device dd ON d.id = dd.dashboard_id
+    LEFT JOIN device dev ON dd.device_id = dev.id
+    WHERE d.account_id = $1
+    GROUP BY d.id
+    ORDER BY d.created_at DESC;
   `;
   const result = await pool.query(query, [accountId]);
   return result.rows;
@@ -53,7 +65,13 @@ export const getDashboardById = async (accountId: number, dashboardId: number) =
 
 export const getDashboardDevices = async (dashboardId: number) => {
   const query = `
-    SELECT dd.id as dashboard_device_id, dd.alias, d.id as device_id, d.name as device_name, d.protocol 
+    SELECT 
+      dd.id as dashboard_device_id, 
+      dd.alias, 
+      d.id as device_id, 
+      d.name as device_name, 
+      d.protocol,
+      d.category
     FROM dashboard_device dd
     JOIN device d ON dd.device_id = d.id
     WHERE dd.dashboard_id = $1
