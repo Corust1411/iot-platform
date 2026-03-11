@@ -115,3 +115,13 @@ export const createDashboardWidget = async (dashboardId: number, data: any) => {
   const result = await pool.query(query, values);
   return result.rows[0];
 };
+
+export const getDashboardWidgets = async (dashboardId: number) => {
+  const query = `
+    SELECT * FROM dashboard_widget 
+    WHERE dashboard_id = $1 
+    ORDER BY created_at ASC
+  `;
+  const result = await pool.query(query, [dashboardId]);
+  return result.rows;
+};

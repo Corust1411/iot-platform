@@ -116,3 +116,13 @@ export const createDashboardWidget = async (req: AuthRequest, res: Response) => 
     res.status(500).json({ message: error.message });
   }
 };
+
+export const getDashboardWidgets = async (req: AuthRequest, res: Response) => {
+  try {
+    const dashboardId = parseInt(Array.isArray(req.params.id) ? req.params.id[0] : req.params.id);
+    const widgets = await dashboardService.getDashboardWidgets(dashboardId);
+    res.status(200).json(widgets);
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};

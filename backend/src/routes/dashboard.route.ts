@@ -9,6 +9,7 @@ router.post('/:id/devices', verifyToken, dashboardController.addDeviceToDashboar
 router.delete('/devices/:deviceId', verifyToken, dashboardController.removeDeviceFromDashboard);
 
 router.post('/:id/widgets', verifyToken, dashboardController.createDashboardWidget);
+router.get('/:id/widgets', verifyToken, dashboardController.getDashboardWidgets);
 
 router.post('/', verifyToken, dashboardController.createDashboard);
 router.get('/', verifyToken, dashboardController.getDashboards);

@@ -42,11 +42,47 @@
           </div>
         </div>
 
+        <!-- widget TAB -->
         <div v-if="currentTab === 'dashboard'" class="widget-grid">
-          <div class="widget-card">
-            
+          
+          <div v-if="widgets.length === 0" class="empty-state full-width-grid">
+            <span class="material-symbols-outlined" style="font-size: 48px; color: #9ca3af;">widgets</span>
+            <p>No widgets yet. Go to Setting tab to create one.</p>
+          </div>
+
+          <div v-for="widget in widgets" :key="widget.id" class="widget-card">
+            <div class="card-header">
+              <span>{{ widget.title }}</span>
+              <div class="card-actions">
+                <span class="material-symbols-outlined">more_horiz</span>
+              </div>
+            </div>
+
+            <div class="card-body center">
+              
+              <div v-if="widget.type === 'text'" class="text-widget">
+                <span class="widget-value">{{ widget.currentValue || '--' }}</span>
+                <span class="widget-unit">{{ widget.config.unit || '' }}</span>
+              </div>
+
+              <div v-if="widget.type === 'toggle'" class="toggle-widget">
+                <label class="switch">
+                  <input type="checkbox" v-model="widget.currentValue" @change="handleToggle(widget)">
+                  <span class="slider round"></span>
+                </label>
+                <div class="toggle-status">
+                  {{ widget.currentValue ? 'ON' : 'OFF' }}
+                </div>
+              </div>
+
+              <div v-if="!['text', 'toggle'].includes(widget.type)" class="text-gray text-small">
+                Preview for {{ widget.type }} coming soon...
+              </div>
+
+            </div>
           </div>
         </div>
+
         <!-- SETTING TAB -->
         <div v-if="currentTab === 'setting'" class="setting-area">
           
@@ -184,7 +220,8 @@ export default {
       availableDevices: [],
       showAddDeviceModal: false,
       selectedDeviceId: null,
-      newDeviceAlias: ''
+      newDeviceAlias: '',
+      widgets: []
     }
   },
 
@@ -203,8 +240,9 @@ export default {
     try {
       const res = await http.get(`/dashboards/${id}`);
       this.dashboardName = res.data.name;
-      this.dashboardDesc = res.data.description; // เก็บไว้โชว์
+      this.dashboardDesc = res.data.description;
       this.editForm = { name: res.data.name, description: res.data.description };
+      this.fetchWidgets(id);
       this.fetchDashboardDevices(id);
     } catch (error) {
       console.error(error);
@@ -227,6 +265,14 @@ export default {
       this.dashboardDevices = res.data;
     } catch (error) {
       console.error(error);
+    }
+  },
+  async fetchWidgets(id) {
+    try {
+      const res = await http.get(`/dashboards/${id}/widgets`);
+      this.widgets = res.data.map(w => ({ ...w, currentValue: null }));
+    } catch (error) {
+      console.error("Error fetching widgets:", error);
     }
   },
   async openAddDeviceModal() {
@@ -533,4 +579,24 @@ export default {
 .close-btn:hover { background: #f3f4f6; color: #111827; }
 .modal-body { padding: 24px; }
 .modal-footer { padding: 16px 24px; border-top: 1px solid #e5e7eb; background: #f9fafb; display: flex; justify-content: flex-end; gap: 12px; }
+
+/* Widget UI Styles */
+.full-width-grid { grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 200px; }
+.text-widget { display: flex; align-items: baseline; gap: 4px; }
+.widget-value { font-size: 32px; font-weight: 700; color: #111827; }
+.widget-unit { font-size: 16px; font-weight: 600; color: #6b7280; }
+
+.toggle-widget { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.toggle-status { font-weight: 700; font-size: 14px; color: #4b5563; }
+
+/* The Switch - The box around the slider */
+.switch { position: relative; display: inline-block; width: 60px; height: 34px; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; }
+.slider:before { position: absolute; content: ""; height: 26px; width: 26px; left: 4px; bottom: 4px; background-color: white; transition: .4s; }
+input:checked + .slider { background-color: #10b981; }
+input:focus + .slider { box-shadow: 0 0 1px #10b981; }
+input:checked + .slider:before { transform: translateX(26px); }
+.slider.round { border-radius: 34px; }
+.slider.round:before { border-radius: 50%; }
 </style>
