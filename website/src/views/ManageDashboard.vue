@@ -30,9 +30,24 @@
               @click="goToDashboard(dash.id)"
             >
               <span class="fw-bold">{{ dash.name }}</span>
-              <span class="text-gray">{{ dash.description || '-' }}</span>
+              <span class="text-gray line-clamp">{{ dash.description || '-' }}</span>
+              
               <span class="device-tags">
-                <span class="text-gray">-</span>
+                <span 
+                  v-for="(dev, index) in (dash.devices || []).slice(0, 4)" 
+                  :key="index" 
+                  class="badge-tag"
+                >
+                  {{ dev.alias || dev.device_name }}
+                </span>
+                
+                <span v-if="(dash.devices || []).length > 4" class="badge-tag more-tag">
+                  +{{ dash.devices.length - 4 }}
+                </span>
+                
+                <span v-if="!(dash.devices && dash.devices.length)" class="text-gray text-small">
+                  -
+                </span>
               </span>
               
               <span class="text-right action-wrapper">
@@ -273,11 +288,14 @@ export default {
 
 .fw-bold { font-weight: 600; color: #1f2937; font-size: 14px; }
 .text-gray { color: #6b7280; }
+.text-small { font-size: 12px; }
 .text-right { text-align: right; display: flex; justify-content: flex-end; }
+.line-clamp { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 
 /* Device Tags */
-.device-tags { display: flex; flex-wrap: wrap; gap: 6px; }
-.badge-tag { background-color: #e2e8f0; color: #334155; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; }
+.device-tags { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.badge-tag { background-color: #e2e8f0; color: #334155; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+.more-tag { background-color: #cbd5e1; color: #1e293b; }
 
 /* Action Menu (Kebab) */
 .action-wrapper { position: relative; }
