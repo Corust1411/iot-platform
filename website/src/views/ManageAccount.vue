@@ -295,9 +295,21 @@ export default {
 .page-title { font-size: 24px; font-weight: 800; margin: 0; color: #111827; }
 
 .create-btn {
-  background: #111827; color: #ffffff; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; font-family: inherit; display: inline-flex; align-items: center; gap: 8px; transition: 0.2s;
+  background: #ffffff;
+  color: #343434;
+  border: 1.5px solid #343434;
+  padding: 2px 16px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s;
 }
-.create-btn:hover { background: #374151; }
+.create-btn:hover { background: #343434; color: #ffffff; }
 
 .account-card { background: #ffffff; padding: 24px; min-height: 70vh; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); border: 1px solid #e5e7eb; display: flex; flex-direction: column; }
 .table-container { display: flex; flex-direction: column; background-color: #DEE5ED; border-radius: 10px; padding: 0 1vh; flex: 1; overflow-y: auto; }
