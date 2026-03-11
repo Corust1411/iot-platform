@@ -3,7 +3,7 @@
     <TopNavBar :username="username" />
 
     <div class="layout">
-      <SideBarNav />
+      <SideNavBar />
 
       <div class="content">
         <div class="page-header">
@@ -281,11 +281,11 @@
 
 <script>
 import TopNavBar from '@/components/TopNavBar.vue'
-import SideBarNav from '@/components/SideBarNav.vue'
+import SideNavBar from '@/components/SideNavBar.vue'
 import { http } from '@/api/http'
 
 export default {
-  components: { TopNavBar, SideBarNav },
+  components: { TopNavBar, SideNavBar },
   data() {
     return {
       username: 'Unknown User',

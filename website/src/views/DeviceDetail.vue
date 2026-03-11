@@ -172,13 +172,7 @@ export default {
   },
   computed: {
     mqttTopic() {
-      const targetDevice = this.isEditing ? this.editForm : this.device;
-      if (!targetDevice.name) return '';
-      const protocol = (targetDevice.protocol || 'unknown').toLowerCase();
-      const category = (targetDevice.category || 'unknown').toLowerCase();
-      const deviceName = targetDevice.name.toLowerCase().replace(/\s+/g, '_');
-      
-      return `multi_platform/gw/${protocol}/${category}/${deviceName}`;
+      return this.device.mqtt_topic || 'Topic not generated yet.';
     }
   },
   async mounted() {
@@ -206,7 +200,8 @@ export default {
           category: res.data.category || '-',
           description: res.data.description || '',
           protocol: res.data.protocol || '',
-          config: res.data.config || {} 
+          config: res.data.config || {},
+          mqtt_topic: res.data.mqtt_topic || ''
         };
         
         this.isLoading = false;
@@ -282,14 +277,7 @@ export default {
 .back-btn:hover { transform: translateX(-3px); }
 
 /* Main Card */
-.detail-card {
-  background: #ffffff;
-  padding: 32px;
-  border-radius: 16px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-  border: 1px solid #e5e7eb;
-  width: 80%;
-}
+.detail-card { background: #ffffff; padding: 32px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); border: 1px solid #e5e7eb; width: 80%; }
 
 .loading-state {
   text-align: center;

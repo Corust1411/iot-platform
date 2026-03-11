@@ -26,9 +26,28 @@ export const createNewDevice = async (accountId: number, data: any) => {
       INSERT INTO device_protocol_config (device_id, config)
       VALUES ($1, $2);
     `;
-
     const configValues = [newDevice.id, data.config || {}];
     await client.query(configQuery, configValues);
+
+    let mqttTopic = '';
+    const protocol = data.protocol;
+    const config = data.config || {};
+
+    if (protocol === 'wifi' && config.macAddress) {
+      mqttTopic = `wifi/gateway/${config.macAddress}`;
+    } else if (protocol === 'zigbee' && config.ieeeAddr) {
+      mqttTopic = `zigbee2mqtt/${config.ieeeAddr}`;
+    } else if (protocol === 'lorawan' && config.devEui) {
+      mqttTopic = `application/ccbeb771-c282-430d-8631-b37f1d4de37b/device/${config.devEui}/event/up`;
+    }
+
+    if (mqttTopic) {
+      const topicQuery = `
+        INSERT INTO mqtt_topic (device_id, topic, direction) 
+        VALUES ($1, $2, 'publish')
+      `;
+      await client.query(topicQuery, [newDevice.id, mqttTopic]);
+    }
 
     await client.query('COMMIT');
     return newDevice;
@@ -48,9 +67,13 @@ export const getAllDevices = async () => {
 
 export const getDeviceById = async (accountId: number, deviceId: number) => {
   const query = `
-    SELECT d.id, d.name, d.category, d.description, d.protocol, c.config
+    SELECT 
+      d.id, d.name, d.description, d.protocol, d.category, d.last_seen, d.created_at,
+      c.config,
+      m.topic as mqtt_topic
     FROM device d
     LEFT JOIN device_protocol_config c ON d.id = c.device_id
+    LEFT JOIN mqtt_topic m ON d.id = m.device_id
     WHERE d.id = $1 AND d.account_id = $2
   `;
   // important to ensure device belongs to the account for security
@@ -159,4 +182,10 @@ export const getRegisteredZigbeeIeeeAddrs = async (accountId: number): Promise<s
   return result.rows
     .map(row => row.ieee_addr)
     .filter(addr => addr != null);
+};
+
+export const getDeviceTelemetryKeys = async (deviceId: number) => {
+  const query = `SELECT DISTINCT key FROM device_telemetry WHERE device_id = $1`;
+  const result = await pool.query(query, [deviceId]);
+  return result.rows.map(row => row.key);
 };

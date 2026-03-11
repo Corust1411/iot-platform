@@ -53,3 +53,76 @@ export const deleteDashboard = async (req: AuthRequest, res: Response) => {
     res.status(400).json({ message: error.message });
   }
 };
+
+export const getDashboardDetails = async (req: AuthRequest, res: Response) => {
+  try {
+    const accountId = req.user?.id;
+    const dashboardId = parseInt(Array.isArray(req.params.id) ? req.params.id[0] : req.params.id);
+    if (!accountId) return res.status(401).json({ message: 'Unauthorized' });
+
+    const dashboard = await dashboardService.getDashboardById(accountId, dashboardId);
+    if (!dashboard) return res.status(404).json({ message: 'Dashboard not found' });
+
+    res.status(200).json(dashboard);
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const getDashboardDevices = async (req: AuthRequest, res: Response) => {
+  try {
+    const dashboardId = parseInt(Array.isArray(req.params.id) ? req.params.id[0] : req.params.id);
+    const devices = await dashboardService.getDashboardDevices(dashboardId);
+    res.status(200).json(devices);
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+}
+
+export const addDeviceToDashboard = async (req: AuthRequest, res: Response) => {
+  try {
+    const dashboardId = parseInt(Array.isArray(req.params.id) ? req.params.id[0] : req.params.id);
+    const { device_id, alias } = req.body;
+    if (!device_id) {
+      return res.status(400).json({ message: 'Device ID is required' });
+    }
+    const result = await dashboardService.addDeviceToDashboard(dashboardId, device_id, alias);
+    res.status(201).json(result);
+  } catch (error: any) {
+    console.error("Add Device to Dashboard Error:", error);
+    res.status(500).json({ message: 'Internal server error while linking device' });
+  }
+};
+
+export const removeDeviceFromDashboard = async (req: AuthRequest, res: Response) => {
+  try {
+    const paramId = req.params.deviceId;
+    const dashboardDeviceId = parseInt(paramId as string, 10);
+    await dashboardService.removeDeviceFromDashboard(dashboardDeviceId);
+    res.status(200).json({ message: 'Device removed from dashboard successfully' });
+  } catch (error: any) {
+    console.error("Delete Linked Device Error:", error.message);
+    res.status(500).json({ message: error.message });
+  }
+}
+
+export const createDashboardWidget = async (req: AuthRequest, res: Response) => {
+  try {
+    const dashboardId = parseInt(Array.isArray(req.params.id) ? req.params.id[0] : req.params.id);
+    const widgetData = req.body;
+    const widget = await dashboardService.createDashboardWidget(dashboardId, widgetData);
+    res.status(201).json(widget);
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const getDashboardWidgets = async (req: AuthRequest, res: Response) => {
+  try {
+    const dashboardId = parseInt(Array.isArray(req.params.id) ? req.params.id[0] : req.params.id);
+    const widgets = await dashboardService.getDashboardWidgets(dashboardId);
+    res.status(200).json(widgets);
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};
