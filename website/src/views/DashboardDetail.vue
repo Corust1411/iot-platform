@@ -54,12 +54,12 @@
             
             <div class="card-header">
               <span>{{ widget.title }}</span>
-              <div class="card-actions action-wrapper">
-                <button class="icon-btn" @click.stop="toggleWidgetMenu(widget.id)">
+              <div class="action-wrapper">
+                <button class="icon-btn" @click.stop="toggleMenu(widget.id)">
                   <span class="material-symbols-outlined">more_horiz</span>
                 </button>
                 
-                <div v-if="activeWidgetMenu === widget.id" class="overflow-menu widget-menu">
+                <div v-if="activeMenu === widget.id" class="action-menu">
                   <button @click.stop="editWidget(widget)">
                     <span class="material-symbols-outlined">edit</span> Edit
                   </button>
@@ -71,28 +71,23 @@
             </div>
 
             <div class="card-body center">
-              
-              <div v-if="widget.type === 'text'" class="text-widget">
-                <span class="widget-value">{{ widget.currentValue || '--' }}</span>
-                <span class="widget-unit">{{ widget.config.unit || '' }}</span>
-              </div>
+              <WidgetText 
+                v-if="widget.type === 'text'" 
+                :widget="widget" 
+              />
+              <WidgetToggle 
+                v-else-if="widget.type === 'toggle'" 
+                :widget="widget" 
+                @toggle="handleToggle" 
+              />
 
-              <div v-if="widget.type === 'toggle'" class="toggle-widget">
-                <label class="switch">
-                  <input type="checkbox" :checked="widget.currentValue" @change="handleToggle(widget, $event)">
-                  <span class="slider round"></span>
-                </label>
-                <div class="toggle-status">
-                  {{ widget.currentValue ? 'ON' : 'OFF' }}
-                </div>
-              </div>
-
-              <div v-if="!['text', 'toggle'].includes(widget.type)" class="text-gray text-small">
+              <div v-else class="text-gray text-small">
                 Preview for {{ widget.type }} coming soon...
               </div>
 
             </div>
-          </div> </div>
+          </div> 
+        </div>
 
         <!-- SETTING TAB -->
         <div v-if="currentTab === 'setting'" class="setting-area">
@@ -205,6 +200,48 @@
               </button>
             </div>
           </div>
+        </div> 
+        <div v-if="showEditWidgetModal" class="modal-overlay" @click.self="showEditWidgetModal = false">
+          <div class="modal-content wide-modal">
+            
+            <div class="modal-header">
+              <h2>Edit Widget</h2>
+              <button class="close-btn" @click="showEditWidgetModal = false">
+                <span class="material-symbols-outlined">close</span>
+              </button>
+            </div>
+            
+            <div class="modal-body">
+              <div class="form-group mb-16">
+                <label>Widget Title</label>
+                <input type="text" v-model="editWidgetForm.title" placeholder="e.g. Living Room Temperature" />
+              </div>
+
+              <div v-if="editWidgetForm.type === 'text'" class="form-group">
+                <label>Unit (Optional)</label>
+                <input type="text" v-model="editWidgetForm.config.unit" placeholder="e.g. °C, %, Lux" />
+              </div>
+
+              <div v-else-if="editWidgetForm.type === 'toggle'">
+                <div class="form-group mb-16">
+                  <label>Label for ON State</label>
+                  <input type="text" v-model="editWidgetForm.config.labelOn" placeholder="e.g. ON, เปิด, Active" />
+                </div>
+                <div class="form-group">
+                  <label>Label for OFF State</label>
+                  <input type="text" v-model="editWidgetForm.config.labelOff" placeholder="e.g. OFF, ปิด, Inactive" />
+                </div>
+              </div>
+            </div>
+
+            <div class="modal-footer">
+              <button class="cancel-btn" @click="showEditWidgetModal = false">Cancel</button>
+              <button class="save-btn" @click="saveEditedWidget" :disabled="!editWidgetForm.title">
+                Save Changes
+              </button>
+            </div>
+            
+          </div>
         </div>
       </div>
     </div> <!--layout-->
@@ -217,8 +254,12 @@ import SideNavBar from '@/components/SideNavBar.vue'
 import { http } from '@/api/http'
 import { io } from 'socket.io-client'
 
+import WidgetToggle from '../components/widgets/WidgetToggle.vue'
+import WidgetText from '../components/widgets/WidgetText.vue'
+
+
 export default {
-  components: { TopNavBar, SideNavBar },
+  components: { TopNavBar, SideNavBar, WidgetToggle, WidgetText },
 
   data() {
     return {
@@ -235,7 +276,14 @@ export default {
       newDeviceAlias: '',
       widgets: [],
       socket: null,
-      activeWidgetMenu: null,
+      activeMenu: null,
+      showEditWidgetModal: false,
+      editWidgetForm: { 
+        id: null, 
+        title: '', 
+        type: '', 
+        config: { unit: '' }
+      },
     }
   },
 
@@ -247,197 +295,228 @@ export default {
     if (dashboardId) {
       await this.fetchDashboardDetail(dashboardId);
     }
-    this.socket = io('http://localhost:5000');
-
-    this.socket.on('telemetry_update', (data) => {
-      this.widgets.forEach(w => {
-        if (w.device_id === data.device_id && w.data_key === data.key) {
-          w.currentValue = data.value;
-        }
-      });
-    });
-    document.addEventListener('click', this.closeWidgetMenu);
+    
+    this.setupSocket();
+    
+    document.addEventListener('click', this.closeMenu);
   },
+  
   beforeUnmount() {
-    document.removeEventListener('click', this.closeWidgetMenu);
+    document.removeEventListener('click', this.closeMenu);
     if (this.socket) {
       this.socket.disconnect();
     }
   },
+  
   methods: {
-  async fetchDashboardDetail(id) {
-    try {
-      const res = await http.get(`/dashboards/${id}`);
-      this.dashboardName = res.data.name;
-      this.dashboardDesc = res.data.description;
-      this.editForm = { name: res.data.name, description: res.data.description };
-      this.fetchWidgets(id);
-      this.fetchDashboardDevices(id);
-    } catch (error) {
-      console.error(error);
-    }
-  },
-  async saveDashboardInfo() {
-    try {
-      const id = this.$route.params.id;
-      await http.put(`/dashboards/${id}`, this.editForm);
-      this.dashboardName = this.editForm.name;
-      this.dashboardDesc = this.editForm.description;
-      this.isEditingInfo = false;
-    } catch (error) {
-      console.error(error);
-    }
-  },
-  async fetchDashboardDevices(id) {
-    try {
-      const res = await http.get(`/dashboards/${id}/devices`);
-      this.dashboardDevices = res.data;
-    } catch (error) {
-      console.error(error);
-    }
-  },
-  async fetchWidgets(id) {
-    try {
-      const res = await http.get(`/dashboards/${id}/widgets`);
-      this.widgets = res.data.map(w => {
-        let val = w.current_value !== null ? Number(w.current_value) : null;
-        
-        if (w.type === 'toggle' && val !== null) {
-          val = val === 1 ? true : false;
-        }
-
-        return { ...w, currentValue: val };
-      });    
-      } catch (error) {
-      console.error("Error fetching widgets:", error);
-    }
-  },
-  setupSocket() {
-    this.socket = io('http://localhost:5000'); 
-
-    this.socket.on('connect', () => {
-      console.log('✅ Connected to Real-time Server');
-    });
-
-    this.socket.on('telemetry_update', (data) => {
-      console.log('📥 Real-time update received:', data);
-
-      this.widgets.forEach(w => {
-        if (w.device_id === data.device_id && w.data_key === data.key) {
-          
-          if (w.type === 'toggle') {
-            w.currentValue = (
-              Number(data.value) === 1 || 
-              data.value === 'ON' || 
-              data.value === true
-            );
-          } else {
-            if (w.data_key === 'state' || w.data_key === 'state_l1') {
-              w.currentValue = (Number(data.value) === 1 || data.value === 'ON') ? 'ON' : 'OFF';
-            } else {
-              w.currentValue = data.value;
-            }
-          }
-          
-        }
-      });
-    });
-  },
-  toggleWidgetMenu(widgetId) {
-    this.activeWidgetMenu = this.activeWidgetMenu === widgetId ? null : widgetId;
-  },
-  closeWidgetMenu() {
-    this.activeWidgetMenu = null;
-  },
-
-  async deleteWidget(widgetId, title) {
-    this.activeWidgetMenu = null;
-    const isConfirm = confirm(`Are you sure you want to delete widget "${title}"?`);
-    
-    if (isConfirm) {
+    async fetchDashboardDetail(id) {
       try {
-        await http.delete(`/dashboards/${this.dashboardId}/widgets/${widgetId}`);
-        
-        this.widgets = this.widgets.filter(w => w.id !== widgetId);
-        
-        alert('Widget deleted successfully!');
-      } catch (error) {
-        console.error("Failed to delete widget:", error);
-        alert('Failed to delete widget.');
-      }
-    }
-  },
-
-  editWidget(widget) {
-    this.activeWidgetMenu = null;
-    console.log("Edit widget clicked for:", widget.id);
-    alert("เดี๋ยวเรามาทำหน้า Edit ต่อกันครับ!");
-  },
-  async handleToggle(widget, event) {
-      const newValue = event.target.checked; 
-      widget.currentValue = newValue; 
-      console.log(`Toggling ${widget.title} to:`, newValue);
-
-      try {
-        await http.post(`/devices/${widget.device_id}/control`, {
-          key: widget.data_key,
-          value: newValue
-        });
-        
-      } catch (error) {
-        console.error("Failed to send command:", error);
-        alert('Failed to control device');
-        
-        widget.currentValue = !newValue;
-        event.target.checked = !newValue;
-      }
-  },
-  async openAddDeviceModal() {
-    this.selectedDeviceId = null;
-    this.newDeviceAlias = '';
-    try {
-      const res = await http.get('/devices');
-      const linkedIds = this.dashboardDevices.map(d => d.device_id);
-      this.availableDevices = res.data.filter(d => !linkedIds.includes(d.id));
-      
-      this.showAddDeviceModal = true;
-    } catch (error) {
-      console.error(error);
-    }
-  },
-  async saveLinkedDevice() {
-    if (!this.selectedDeviceId) return;
-    try {
-      const id = this.$route.params.id;
-      await http.post(`/dashboards/${id}/devices`, {
-        device_id: this.selectedDeviceId,
-        alias: this.newDeviceAlias
-      });
-      this.showAddDeviceModal = false;
-      this.fetchDashboardDevices(id);
-    } catch (error) {
-      console.error(error);
-      alert('Failed to link device');
-    }
-  },
-  async removeLinkedDevice(dashboardDeviceId) {
-    if(confirm('Are you sure you want to unlink this device?')) {
-      try {
-        await http.delete(`/dashboards/devices/${dashboardDeviceId}`);
-        this.fetchDashboardDevices(this.$route.params.id);
+        const res = await http.get(`/dashboards/${id}`);
+        this.dashboardName = res.data.name;
+        this.dashboardDesc = res.data.description;
+        this.editForm = { name: res.data.name, description: res.data.description };
+        this.fetchWidgets(id);
+        this.fetchDashboardDevices(id);
       } catch (error) {
         console.error(error);
       }
-    }
-  },
-  startEditInfo() {
-    this.editForm = { name: this.dashboardName, description: this.dashboardDesc };
-    this.isEditingInfo = true;
-  },
-  cancelEditInfo() {
-    this.isEditingInfo = false;
-  },
-}
+    },
+    async saveDashboardInfo() {
+      try {
+        const id = this.$route.params.id;
+        await http.put(`/dashboards/${id}`, this.editForm);
+        this.dashboardName = this.editForm.name;
+        this.dashboardDesc = this.editForm.description;
+        this.isEditingInfo = false;
+      } catch (error) {
+        console.error(error);
+      }
+    },
+    async fetchDashboardDevices(id) {
+      try {
+        const res = await http.get(`/dashboards/${id}/devices`);
+        this.dashboardDevices = res.data;
+      } catch (error) {
+        console.error(error);
+      }
+    },
+    async fetchWidgets(id) {
+      try {
+        const res = await http.get(`/dashboards/${id}/widgets`);
+        this.widgets = res.data.map(w => {
+          let val = w.current_value !== null ? Number(w.current_value) : null;
+          
+          if (w.type === 'toggle' && val !== null) {
+            val = val === 1 ? true : false;
+          }
+
+          let parsedConfig = w.config;
+          if (typeof parsedConfig === 'string') {
+            try { parsedConfig = JSON.parse(parsedConfig); } catch(e) {}
+          }
+
+          return { ...w, currentValue: val, config: parsedConfig || {} };
+        });    
+      } catch (error) {
+        console.error("Error fetching widgets:", error);
+      }
+    },
+    setupSocket() {
+      this.socket = io('http://localhost:5000'); 
+
+      this.socket.on('connect', () => {
+        console.log('✅ Connected to Real-time Server');
+      });
+
+      this.socket.on('telemetry_update', (data) => {
+        console.log('📥 Real-time update received:', data);
+
+        this.widgets.forEach(w => {
+          if (w.device_id === data.device_id && w.data_key === data.key) {
+            
+            if (w.type === 'toggle') {
+              w.currentValue = (
+                Number(data.value) === 1 || 
+                data.value === 'ON' || 
+                data.value === true
+              );
+            } else {
+              if (w.data_key === 'state' || w.data_key === 'state_l1') {
+                w.currentValue = (Number(data.value) === 1 || data.value === 'ON') ? 'ON' : 'OFF';
+              } else {
+                w.currentValue = data.value;
+              }
+            }
+            
+          }
+        });
+      });
+    },
+    toggleMenu(widgetId) {
+      this.activeMenu = this.activeMenu === widgetId ? null : widgetId;
+    },
+    closeMenu() {
+      this.activeMenu = null;
+    },
+
+    async deleteWidget(widgetId, title) {
+      this.activeMenu = null;
+      const isConfirm = confirm(`Are you sure you want to delete widget "${title}"?`);
+      
+      if (isConfirm) {
+        try {
+          await http.delete(`/dashboards/${this.$route.params.id}/widgets/${widgetId}`);
+          this.widgets = this.widgets.filter(w => w.id !== widgetId);
+          
+        } catch (error) {
+          console.error("Failed to delete widget:", error);
+          alert('Failed to delete widget.');
+        }
+      }
+    },
+    editWidget(widget) {
+      this.activeMenu = null;
+      
+      this.editWidgetForm = {
+        id: widget.id,
+        title: widget.title,
+        type: widget.type,
+        config: widget.config ? { ...widget.config } : { unit: '' }
+      };
+      
+      this.showEditWidgetModal = true;
+    },
+
+    async saveEditedWidget() {
+      try {
+        const dashboardId = this.$route.params.id;
+        const widgetId = this.editWidgetForm.id;
+        
+        const payload = {
+          title: this.editWidgetForm.title,
+          config: this.editWidgetForm.config
+        };
+
+        await http.put(`/dashboards/${dashboardId}/widgets/${widgetId}`, payload);
+        
+        const index = this.widgets.findIndex(w => w.id === widgetId);
+        if (index !== -1) {
+          this.widgets[index].title = payload.title;
+          this.widgets[index].config = payload.config;
+        }
+
+        this.showEditWidgetModal = false;
+        
+      } catch (error) {
+        console.error("Failed to update widget:", error);
+        alert('Failed to update widget.');
+      }
+    },
+    async handleToggle(widget, event) {
+        const newValue = event.target.checked; 
+        widget.currentValue = newValue; 
+        console.log(`Toggling ${widget.title} to:`, newValue);
+
+        try {
+          await http.post(`/devices/${widget.device_id}/control`, {
+            key: widget.data_key,
+            value: newValue
+          });
+          
+        } catch (error) {
+          console.error("Failed to send command:", error);
+          alert('Failed to control device');
+          
+          widget.currentValue = !newValue;
+          event.target.checked = !newValue;
+        }
+    },
+    async openAddDeviceModal() {
+      this.selectedDeviceId = null;
+      this.newDeviceAlias = '';
+      try {
+        const res = await http.get('/devices');
+        const linkedIds = this.dashboardDevices.map(d => d.device_id);
+        this.availableDevices = res.data.filter(d => !linkedIds.includes(d.id));
+        
+        this.showAddDeviceModal = true;
+      } catch (error) {
+        console.error(error);
+      }
+    },
+    async saveLinkedDevice() {
+      if (!this.selectedDeviceId) return;
+      try {
+        const id = this.$route.params.id;
+        await http.post(`/dashboards/${id}/devices`, {
+          device_id: this.selectedDeviceId,
+          alias: this.newDeviceAlias
+        });
+        this.showAddDeviceModal = false;
+        this.fetchDashboardDevices(id);
+      } catch (error) {
+        console.error(error);
+        alert('Failed to link device');
+      }
+    },
+    async removeLinkedDevice(dashboardDeviceId) {
+      if(confirm('Are you sure you want to unlink this device?')) {
+        try {
+          await http.delete(`/dashboards/devices/${dashboardDeviceId}`);
+          this.fetchDashboardDevices(this.$route.params.id);
+        } catch (error) {
+          console.error(error);
+        }
+      }
+    },
+    startEditInfo() {
+      this.editForm = { name: this.dashboardName, description: this.dashboardDesc };
+      this.isEditingInfo = true;
+    },
+    cancelEditInfo() {
+      this.isEditingInfo = false;
+    },
+  }
 }
 </script>
 
@@ -641,6 +720,29 @@ export default {
   right: 0;
 }
 
+.action-wrapper {
+  position: relative;
+  display: flex;
+}
+
+.action-menu { 
+  position: absolute; 
+  top: 100%; 
+  right: 0; 
+  background: white; 
+  border: 1px solid #e2e8f0; 
+  border-radius: 8px; 
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); 
+  display: flex; 
+  flex-direction: column; 
+  min-width: 140px; 
+  z-index: 10; 
+  overflow: hidden; 
+}
+.action-menu button { background: none; border: none; padding: 10px 16px; text-align: left; cursor: pointer; font-size: 13px; font-weight: 500; color: #374151; display: flex; align-items: center; gap: 8px; transition: 0.2s; font-family: inherit; }
+.action-menu button:hover { background-color: #f1f5f9; }
+.danger-text { color: #ef4444 !important; }
+.danger-text:hover { background-color: #fef2f2 !important; }
 /* Setting Cards */
 .setting-area { display: flex; flex-direction: column; gap: 24px; }
 .setting-card { background: white; border-radius: 12px; padding: 24px; border: 1px solid #e5e7eb; box-shadow: 0 2px 6px rgba(0,0,0,0.02); }
@@ -701,15 +803,6 @@ export default {
 .close-btn:hover { background: #f3f4f6; color: #111827; }
 .modal-body { padding: 24px; }
 .modal-footer { padding: 16px 24px; border-top: 1px solid #e5e7eb; background: #f9fafb; display: flex; justify-content: flex-end; gap: 12px; }
-
-/* Widget UI Styles */
-.full-width-grid { grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 200px; }
-.text-widget { display: flex; align-items: baseline; gap: 4px; }
-.widget-value { font-size: 32px; font-weight: 700; color: #111827; }
-.widget-unit { font-size: 16px; font-weight: 600; color: #6b7280; }
-
-.toggle-widget { display: flex; flex-direction: column; align-items: center; gap: 12px; }
-.toggle-status { font-weight: 700; font-size: 14px; color: #4b5563; }
 
 /* The Switch - The box around the slider */
 .switch { position: relative; display: inline-block; width: 60px; height: 34px; }
