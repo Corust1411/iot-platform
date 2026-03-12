@@ -15,4 +15,5 @@ router.get('/:id', verifyToken, deviceController.getDeviceById);
 router.delete('/:id', verifyToken, deviceController.deleteDevice);
 router.put('/:id', verifyToken, deviceController.updateDevice);
 
+router.post('/:id/control', verifyToken, deviceController.controlDevice);
 export default router;

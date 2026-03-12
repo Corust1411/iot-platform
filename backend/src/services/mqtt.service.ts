@@ -3,9 +3,11 @@ import { pool } from '../config/db';
 import { Server } from 'socket.io';
 
 const MQTT_BROKER_URL = process.env.MQTT_BROKER_URL || 'mqtt://localhost:1883';
+let mqttClient: mqtt.MqttClient;
 
 export const initMqttClient = (io: Server) => {
   const client = mqtt.connect(MQTT_BROKER_URL);
+  mqttClient = client;
 
   client.on('connect', () => {
     console.log('✅ Connected to Central MQTT Broker (Backend)');
@@ -97,4 +99,13 @@ export const initMqttClient = (io: Server) => {
   client.on('error', (err) => {
     console.error('❌ MQTT Connection Error:', err);
   });
+};
+
+export const publishCommand = (topic: string, payload: any) => {
+  if (mqttClient && mqttClient.connected) {
+    mqttClient.publish(topic, JSON.stringify(payload));
+    console.log(`📤 [Control] Published to ${topic}:`, payload);
+  } else {
+    console.error("❌ MQTT Client is not connected. Cannot publish.");
+  }
 };
