@@ -204,6 +204,7 @@
 import TopNavBar from '@/components/TopNavBar.vue'
 import SideNavBar from '@/components/SideNavBar.vue'
 import { http } from '@/api/http'
+import { io } from 'socket.io-client'
 
 export default {
   components: { TopNavBar, SideNavBar },
@@ -221,7 +222,8 @@ export default {
       showAddDeviceModal: false,
       selectedDeviceId: null,
       newDeviceAlias: '',
-      widgets: []
+      widgets: [],
+      socket: null,
     }
   },
 
@@ -233,8 +235,21 @@ export default {
     if (dashboardId) {
       await this.fetchDashboardDetail(dashboardId);
     }
-  },
+    this.socket = io('http://localhost:5000');
 
+    this.socket.on('telemetry_update', (data) => {
+      this.widgets.forEach(w => {
+        if (w.device_id === data.device_id && w.data_key === data.key) {
+          w.currentValue = data.value;
+        }
+      });
+    });
+  },
+  beforeUnmount() {
+    if (this.socket) {
+      this.socket.disconnect();
+    }
+  },
   methods: {
   async fetchDashboardDetail(id) {
     try {
@@ -270,10 +285,59 @@ export default {
   async fetchWidgets(id) {
     try {
       const res = await http.get(`/dashboards/${id}/widgets`);
-      this.widgets = res.data.map(w => ({ ...w, currentValue: null }));
-    } catch (error) {
+      this.widgets = res.data.map(w => {
+        let val = w.current_value !== null ? Number(w.current_value) : null;
+        
+        // ถ้าเป็นปุ่ม Toggle เราต้องแปลง 1 เป็น true, 0 เป็น false ให้สวิตช์มันแสดงผลถูกต้อง
+        if (w.type === 'toggle' && val !== null) {
+          val = val === 1 ? true : false;
+        }
+
+        return { ...w, currentValue: val };
+      });    
+      } catch (error) {
       console.error("Error fetching widgets:", error);
     }
+  },
+  setupSocket() {
+    this.socket = io('http://localhost:5000'); 
+
+    this.socket.on('connect', () => {
+      console.log('✅ Connected to Real-time Server');
+    });
+
+    this.socket.on('telemetry_update', (data) => {
+      console.log('📥 Real-time update received:', data);
+
+      this.widgets.forEach(w => {
+        if (w.device_id === data.device_id && w.data_key === data.key) {
+          
+          if (w.type === 'toggle') {
+            w.currentValue = data.value === 1 ? true : false;
+          } else {
+            w.currentValue = data.value;
+          }
+          
+        }
+      });
+    });
+  },
+  async handleToggle(widget) {
+      const newValue = widget.currentValue;
+      console.log(`Toggling ${widget.title} to:`, newValue);
+
+      try {
+        await http.post(`/devices/${widget.device_id}/control`, {
+          key: widget.data_key, // เช่น 'state'
+          value: newValue       // true หรือ false
+        });
+        
+      } catch (error) {
+        console.error("Failed to send command:", error);
+        alert('Failed to control device');
+        
+        widget.currentValue = !newValue;
+      }
   },
   async openAddDeviceModal() {
     this.selectedDeviceId = null;
