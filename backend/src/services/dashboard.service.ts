@@ -132,3 +132,19 @@ export const getDashboardWidgets = async (dashboardId: number) => {
   const result = await pool.query(query, [dashboardId]);
   return result.rows;
 };
+
+export const updateWidget = async (widgetId: number, title: string, config: any) => {
+  const query = `
+    UPDATE dashboard_widget 
+    SET title = $1, config = $2 
+    WHERE id = $3 RETURNING *
+  `;
+  const result = await pool.query(query, [title, config, widgetId]);
+  return result.rows[0];
+};
+
+export const deleteWidget = async (widgetId: number) => {
+  const query = `DELETE FROM dashboard_widget WHERE id = $1 RETURNING *`;
+  const result = await pool.query(query, [widgetId]);
+  return result.rows[0];
+};

@@ -51,10 +51,22 @@
           </div>
 
           <div v-for="widget in widgets" :key="widget.id" class="widget-card">
+            
             <div class="card-header">
               <span>{{ widget.title }}</span>
-              <div class="card-actions">
-                <span class="material-symbols-outlined">more_horiz</span>
+              <div class="card-actions action-wrapper">
+                <button class="icon-btn" @click.stop="toggleWidgetMenu(widget.id)">
+                  <span class="material-symbols-outlined">more_horiz</span>
+                </button>
+                
+                <div v-if="activeWidgetMenu === widget.id" class="overflow-menu widget-menu">
+                  <button @click.stop="editWidget(widget)">
+                    <span class="material-symbols-outlined">edit</span> Edit
+                  </button>
+                  <button class="danger-text" @click.stop="deleteWidget(widget.id, widget.title)">
+                    <span class="material-symbols-outlined">delete</span> Delete
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -80,8 +92,7 @@
               </div>
 
             </div>
-          </div>
-        </div>
+          </div> </div>
 
         <!-- SETTING TAB -->
         <div v-if="currentTab === 'setting'" class="setting-area">
@@ -196,8 +207,8 @@
           </div>
         </div>
       </div>
-    </div>
-  </div>
+    </div> <!--layout-->
+  </div> <!--app-wrapper-->
 </template>
 
 <script>
@@ -224,6 +235,7 @@ export default {
       newDeviceAlias: '',
       widgets: [],
       socket: null,
+      activeWidgetMenu: null,
     }
   },
 
@@ -244,8 +256,10 @@ export default {
         }
       });
     });
+    document.addEventListener('click', this.closeWidgetMenu);
   },
   beforeUnmount() {
+    document.removeEventListener('click', this.closeWidgetMenu);
     if (this.socket) {
       this.socket.disconnect();
     }
@@ -322,14 +336,46 @@ export default {
       });
     });
   },
+  toggleWidgetMenu(widgetId) {
+    this.activeWidgetMenu = this.activeWidgetMenu === widgetId ? null : widgetId;
+  },
+  closeWidgetMenu() {
+    this.activeWidgetMenu = null;
+  },
+
+  async deleteWidget(widgetId, title) {
+    this.activeWidgetMenu = null; // ปิดเมนู
+    const isConfirm = confirm(`Are you sure you want to delete widget "${title}"?`);
+    
+    if (isConfirm) {
+      try {
+        await http.delete(`/dashboards/${this.dashboardId}/widgets/${widgetId}`);
+        
+        // ลบออกจาก Array บนหน้าจอทันที ไม่ต้องรีเฟรชหน้าเว็บ
+        this.widgets = this.widgets.filter(w => w.id !== widgetId);
+        
+        alert('Widget deleted successfully!');
+      } catch (error) {
+        console.error("Failed to delete widget:", error);
+        alert('Failed to delete widget.');
+      }
+    }
+  },
+
+  editWidget(widget) {
+    this.activeWidgetMenu = null;
+    // ลอจิกการแก้ไขจะตามมาครับ
+    console.log("Edit widget clicked for:", widget.id);
+    alert("เดี๋ยวเรามาทำหน้า Edit ต่อกันครับ!");
+  },
   async handleToggle(widget) {
       const newValue = widget.currentValue;
       console.log(`Toggling ${widget.title} to:`, newValue);
 
       try {
         await http.post(`/devices/${widget.device_id}/control`, {
-          key: widget.data_key, // เช่น 'state'
-          value: newValue       // true หรือ false
+          key: widget.data_key,
+          value: newValue
         });
         
       } catch (error) {
@@ -581,6 +627,11 @@ export default {
 
 .tabs span {
   transition: all 0.2s;
+}
+
+.widget-menu {
+  top: 30px;
+  right: 0;
 }
 
 /* Setting Cards */
