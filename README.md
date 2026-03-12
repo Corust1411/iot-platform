@@ -1,4 +1,4 @@
-# Multi-protocol IoT Platform
+<br># Multi-protocol IoT Platform
 
 ![Vue.js](https://img.shields.io/badge/Vue.js-35495E?style=for-the-badge&logo=vuedotjs&logoColor=4FC08D)
 ![Node.js](https://img.shields.io/badge/Node.js-43853D?style=for-the-badge&logo=node.js&logoColor=white)
@@ -26,36 +26,38 @@ A comprehensive, full-stack IoT platform designed to manage and monitor devices 
 
 โปรเจกต์นี้แบ่งออกเป็น 2 ส่วนหลัก คือ `backend` (Node.js/Express) และ `website` (Vue.js) โดยใช้สถาปัตยกรรมแบบ Component-Based และ MVC
 
-iot-platform/
-├── backend/
-│   ├── src/
-│   │   ├── config/
-│   │   ├── controllers/
-│   │   ├── routes/
-│   │   ├── services/
-│   │   └── server.ts
-│   ├── package.json
-│   └── tsconfig.json
-│
-├── website/
-│   ├── src/
-│   │   ├── api/
-│   │   ├── assets/
-│   │   ├── components/
-│   │   │   ├── widgets/
-│   │   ├── router/
-│   │   ├── views/
-│   │   ├── App.vue
-│   │   └── main.js
-│   ├── package.json
-│   └── vite.config.js
-│
-└── package.json
+iot-platform/ 
+<br>├── backend/
+<br>│ ├── src/
+<br>│ │ ├── config/
+<br>│ │ ├── controllers/
+<br>│ │ ├── routes/
+<br>│ │ ├── services/
+<br>│ │ └── server.ts
+<br>│ ├── package.json
+<br>│ └── tsconfig.json
+<br>|
+<br>├── website/
+<br>│ ├── src/
+<br>│ │ ├── api/
+<br>│ │ ├── assets/
+<br>│ │ ├── components/
+<br>│ │ │ ├── widgets/
+<br>│ │ ├── router/
+<br>│ │ ├── views/
+<br>│ │ ├── App.vue
+<br>│ │ └── main.js
+<br>│ ├── package.json
+<br>│ └── vite.config.js
+<br>│
+<br>└── package.json
 
 ## Getting Started
 
 ### Prerequisites
+
 Make sure you have the following installed on your machine:
+
 - [Node.js](https://nodejs.org/) (v18 or higher)
 - [PostgreSQL](https://www.postgresql.org/) with [TimescaleDB](https://www.timescale.com/)
 - An active MQTT Broker
