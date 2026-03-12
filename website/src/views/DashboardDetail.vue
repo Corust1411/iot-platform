@@ -221,20 +221,22 @@
                 <input type="text" v-model="editWidgetForm.title" placeholder="e.g. Living Room Temperature" />
               </div>
 
+              <div class="form-group mb-16">
+                <label>Parameter (Data Key)</label>
+                <input 
+                  type="text" 
+                  v-model="editWidgetForm.data_key" 
+                  list="data-keys-list" 
+                  placeholder="e.g. rssi, temperature, state" 
+                />
+                <datalist id="data-keys-list">
+                  <option v-for="key in availableDataKeys" :key="key" :value="key"></option>
+                </datalist>
+              </div>
+
               <div v-if="editWidgetForm.type === 'text'" class="form-group">
                 <label>Unit (Optional)</label>
                 <input type="text" v-model="editWidgetForm.config.unit" placeholder="e.g. °C, %, Lux" />
-              </div>
-
-              <div v-else-if="editWidgetForm.type === 'toggle'">
-                <div class="form-group mb-16">
-                  <label>Label for ON State</label>
-                  <input type="text" v-model="editWidgetForm.config.labelOn" placeholder="e.g. ON, เปิด, Active" />
-                </div>
-                <div class="form-group">
-                  <label>Label for OFF State</label>
-                  <input type="text" v-model="editWidgetForm.config.labelOff" placeholder="e.g. OFF, ปิด, Inactive" />
-                </div>
               </div>
 
               <div v-else-if="editWidgetForm.type === 'gauge'">
@@ -251,7 +253,6 @@
                   <input type="number" v-model="editWidgetForm.config.max" placeholder="e.g. 0" />
                 </div>
               </div>
-
             </div>
 
             <div class="modal-footer">
@@ -302,11 +303,13 @@ export default {
         id: null, 
         title: '', 
         type: '', 
-        config: { unit: '' }
+        data_key: '',
+        device_id: null,
+        config: {}
       },
+      availableDataKeys: [],
     }
   },
-
   async mounted() {
     const storedUser = localStorage.getItem('username')
     if (storedUser) this.username = storedUser
@@ -418,7 +421,6 @@ export default {
     closeMenu() {
       this.activeMenu = null;
     },
-
     async deleteWidget(widgetId, title) {
       this.activeMenu = null;
       const isConfirm = confirm(`Are you sure you want to delete widget "${title}"?`);
@@ -434,15 +436,23 @@ export default {
         }
       }
     },
-    editWidget(widget) {
+    async fetchDeviceDataKeys(deviceId) {
+      try {
+        const res = await http.get(`/devices/${deviceId}/telemetry/keys`); 
+        this.availableDataKeys = res.data;
+      } catch (error) {
+        console.warn("Could not fetch specific telemetry keys, showing empty suggestion.");
+        this.availableDataKeys = ['rssi', 'state', 'brightness', 'temperature', 'humidity', 'linkquality'];
+      }
+    },
+    async editWidget(widget) {
       this.activeMenu = null;
       
       let defaultConfig = {};
       if (widget.type === 'text') {
         defaultConfig = { unit: '' };
-      } else if (widget.type === 'toggle') {
-        defaultConfig = { labelOn: 'ON', labelOff: 'OFF' };
-      } else if (widget.type === 'gauge') {
+      }
+      else if (widget.type === 'gauge') {
         defaultConfig = { unit: '', min: 0, max: 100 };
       }
 
@@ -450,14 +460,16 @@ export default {
         id: widget.id,
         title: widget.title,
         type: widget.type,
+        data_key: widget.data_key,
+        device_id: widget.device_id,
         config: widget.config && Object.keys(widget.config).length > 0 
                 ? { ...defaultConfig, ...widget.config } 
                 : { ...defaultConfig }
       };
-      
+
+      await this.fetchDeviceDataKeys(widget.device_id);
       this.showEditWidgetModal = true;
     },
-
     async saveEditedWidget() {
       try {
         const dashboardId = this.$route.params.id;
@@ -465,6 +477,7 @@ export default {
         
         const payload = {
           title: this.editWidgetForm.title,
+          data_key: this.editWidgetForm.data_key,
           config: this.editWidgetForm.config
         };
 
@@ -473,6 +486,7 @@ export default {
         const index = this.widgets.findIndex(w => w.id === widgetId);
         if (index !== -1) {
           this.widgets[index].title = payload.title;
+          this.widgets[index].data_key = payload.data_key;
           this.widgets[index].config = payload.config;
         }
 
