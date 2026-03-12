@@ -118,10 +118,33 @@ export const createDashboardWidget = async (dashboardId: number, data: any) => {
 
 export const getDashboardWidgets = async (dashboardId: number) => {
   const query = `
-    SELECT * FROM dashboard_widget 
-    WHERE dashboard_id = $1 
-    ORDER BY created_at ASC
+    SELECT 
+      w.*,
+      (
+        SELECT value FROM device_telemetry dt 
+        WHERE dt.device_id = w.device_id AND dt.key = w.data_key 
+        ORDER BY time DESC LIMIT 1
+      ) as current_value
+    FROM dashboard_widget w
+    WHERE w.dashboard_id = $1 
+    ORDER BY w.created_at ASC
   `;
   const result = await pool.query(query, [dashboardId]);
   return result.rows;
+};
+
+export const updateWidget = async (widgetId: number, title: string, config: any) => {
+  const query = `
+    UPDATE dashboard_widget 
+    SET title = $1, config = $2 
+    WHERE id = $3 RETURNING *
+  `;
+  const result = await pool.query(query, [title, config, widgetId]);
+  return result.rows[0];
+};
+
+export const deleteWidget = async (widgetId: number) => {
+  const query = `DELETE FROM dashboard_widget WHERE id = $1 RETURNING *`;
+  const result = await pool.query(query, [widgetId]);
+  return result.rows[0];
 };

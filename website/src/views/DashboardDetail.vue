@@ -51,10 +51,22 @@
           </div>
 
           <div v-for="widget in widgets" :key="widget.id" class="widget-card">
+            
             <div class="card-header">
               <span>{{ widget.title }}</span>
-              <div class="card-actions">
-                <span class="material-symbols-outlined">more_horiz</span>
+              <div class="card-actions action-wrapper">
+                <button class="icon-btn" @click.stop="toggleWidgetMenu(widget.id)">
+                  <span class="material-symbols-outlined">more_horiz</span>
+                </button>
+                
+                <div v-if="activeWidgetMenu === widget.id" class="overflow-menu widget-menu">
+                  <button @click.stop="editWidget(widget)">
+                    <span class="material-symbols-outlined">edit</span> Edit
+                  </button>
+                  <button class="danger-text" @click.stop="deleteWidget(widget.id, widget.title)">
+                    <span class="material-symbols-outlined">delete</span> Delete
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -67,7 +79,7 @@
 
               <div v-if="widget.type === 'toggle'" class="toggle-widget">
                 <label class="switch">
-                  <input type="checkbox" v-model="widget.currentValue" @change="handleToggle(widget)">
+                  <input type="checkbox" :checked="widget.currentValue" @change="handleToggle(widget, $event)">
                   <span class="slider round"></span>
                 </label>
                 <div class="toggle-status">
@@ -80,8 +92,7 @@
               </div>
 
             </div>
-          </div>
-        </div>
+          </div> </div>
 
         <!-- SETTING TAB -->
         <div v-if="currentTab === 'setting'" class="setting-area">
@@ -196,14 +207,15 @@
           </div>
         </div>
       </div>
-    </div>
-  </div>
+    </div> <!--layout-->
+  </div> <!--app-wrapper-->
 </template>
 
 <script>
 import TopNavBar from '@/components/TopNavBar.vue'
 import SideNavBar from '@/components/SideNavBar.vue'
 import { http } from '@/api/http'
+import { io } from 'socket.io-client'
 
 export default {
   components: { TopNavBar, SideNavBar },
@@ -221,7 +233,9 @@ export default {
       showAddDeviceModal: false,
       selectedDeviceId: null,
       newDeviceAlias: '',
-      widgets: []
+      widgets: [],
+      socket: null,
+      activeWidgetMenu: null,
     }
   },
 
@@ -233,8 +247,23 @@ export default {
     if (dashboardId) {
       await this.fetchDashboardDetail(dashboardId);
     }
-  },
+    this.socket = io('http://localhost:5000');
 
+    this.socket.on('telemetry_update', (data) => {
+      this.widgets.forEach(w => {
+        if (w.device_id === data.device_id && w.data_key === data.key) {
+          w.currentValue = data.value;
+        }
+      });
+    });
+    document.addEventListener('click', this.closeWidgetMenu);
+  },
+  beforeUnmount() {
+    document.removeEventListener('click', this.closeWidgetMenu);
+    if (this.socket) {
+      this.socket.disconnect();
+    }
+  },
   methods: {
   async fetchDashboardDetail(id) {
     try {
@@ -270,10 +299,98 @@ export default {
   async fetchWidgets(id) {
     try {
       const res = await http.get(`/dashboards/${id}/widgets`);
-      this.widgets = res.data.map(w => ({ ...w, currentValue: null }));
-    } catch (error) {
+      this.widgets = res.data.map(w => {
+        let val = w.current_value !== null ? Number(w.current_value) : null;
+        
+        if (w.type === 'toggle' && val !== null) {
+          val = val === 1 ? true : false;
+        }
+
+        return { ...w, currentValue: val };
+      });    
+      } catch (error) {
       console.error("Error fetching widgets:", error);
     }
+  },
+  setupSocket() {
+    this.socket = io('http://localhost:5000'); 
+
+    this.socket.on('connect', () => {
+      console.log('✅ Connected to Real-time Server');
+    });
+
+    this.socket.on('telemetry_update', (data) => {
+      console.log('📥 Real-time update received:', data);
+
+      this.widgets.forEach(w => {
+        if (w.device_id === data.device_id && w.data_key === data.key) {
+          
+          if (w.type === 'toggle') {
+            w.currentValue = (
+              Number(data.value) === 1 || 
+              data.value === 'ON' || 
+              data.value === true
+            );
+          } else {
+            if (w.data_key === 'state' || w.data_key === 'state_l1') {
+              w.currentValue = (Number(data.value) === 1 || data.value === 'ON') ? 'ON' : 'OFF';
+            } else {
+              w.currentValue = data.value;
+            }
+          }
+          
+        }
+      });
+    });
+  },
+  toggleWidgetMenu(widgetId) {
+    this.activeWidgetMenu = this.activeWidgetMenu === widgetId ? null : widgetId;
+  },
+  closeWidgetMenu() {
+    this.activeWidgetMenu = null;
+  },
+
+  async deleteWidget(widgetId, title) {
+    this.activeWidgetMenu = null;
+    const isConfirm = confirm(`Are you sure you want to delete widget "${title}"?`);
+    
+    if (isConfirm) {
+      try {
+        await http.delete(`/dashboards/${this.dashboardId}/widgets/${widgetId}`);
+        
+        this.widgets = this.widgets.filter(w => w.id !== widgetId);
+        
+        alert('Widget deleted successfully!');
+      } catch (error) {
+        console.error("Failed to delete widget:", error);
+        alert('Failed to delete widget.');
+      }
+    }
+  },
+
+  editWidget(widget) {
+    this.activeWidgetMenu = null;
+    console.log("Edit widget clicked for:", widget.id);
+    alert("เดี๋ยวเรามาทำหน้า Edit ต่อกันครับ!");
+  },
+  async handleToggle(widget, event) {
+      const newValue = event.target.checked; 
+      widget.currentValue = newValue; 
+      console.log(`Toggling ${widget.title} to:`, newValue);
+
+      try {
+        await http.post(`/devices/${widget.device_id}/control`, {
+          key: widget.data_key,
+          value: newValue
+        });
+        
+      } catch (error) {
+        console.error("Failed to send command:", error);
+        alert('Failed to control device');
+        
+        widget.currentValue = !newValue;
+        event.target.checked = !newValue;
+      }
   },
   async openAddDeviceModal() {
     this.selectedDeviceId = null;
@@ -517,6 +634,11 @@ export default {
 
 .tabs span {
   transition: all 0.2s;
+}
+
+.widget-menu {
+  top: 30px;
+  right: 0;
 }
 
 /* Setting Cards */

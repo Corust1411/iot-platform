@@ -10,6 +10,8 @@ router.delete('/devices/:deviceId', verifyToken, dashboardController.removeDevic
 
 router.post('/:id/widgets', verifyToken, dashboardController.createDashboardWidget);
 router.get('/:id/widgets', verifyToken, dashboardController.getDashboardWidgets);
+router.put('/:id/widgets/:widgetId', verifyToken, dashboardController.updateWidgetData);
+router.delete('/:id/widgets/:widgetId', verifyToken, dashboardController.deleteWidgetData);
 
 router.post('/', verifyToken, dashboardController.createDashboard);
 router.get('/', verifyToken, dashboardController.getDashboards);

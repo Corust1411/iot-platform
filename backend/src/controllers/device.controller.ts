@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import * as deviceService from '../services/device.service';
 import * as nodeRedService from '../services/nodered.service';
+import * as mqttService from '../services/mqtt.service';
+import { pool} from '../config/db';
 
 interface AuthRequest extends Request {
   user?: { id: number; role: string };
@@ -146,6 +148,52 @@ export const getDeviceKeys = async (req: AuthRequest, res: Response) => {
     const keys = await deviceService.getDeviceTelemetryKeys(deviceId);
     res.status(200).json(keys);
   } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const controlDevice = async (req: AuthRequest, res: Response) => {
+  try {
+    const deviceId = parseInt(Array.isArray(req.params.id) ? req.params.id[0] : req.params.id);
+    const { key, value } = req.body;
+
+    const query = `
+      SELECT d.protocol, c.config
+      FROM device d
+      JOIN device_protocol_config c ON d.id = c.device_id
+      WHERE d.id = $1
+    `;
+    const result = await pool.query(query, [deviceId]);
+    
+    if (result.rowCount === 0) return res.status(404).json({ message: "Device not found" });
+    const { protocol, config } = result.rows[0];
+
+    let baseTopic = '';
+    if (protocol === 'zigbee') {
+      baseTopic = `zigbee2mqtt/${config.ieeeAddr}`;
+    } else if (protocol === 'wifi') {
+      baseTopic = `wifi/gateway/${config.macAddress}`;
+    } else if (protocol === 'lorawan') {
+      baseTopic = `application/${config.appKey}/device/${config.devEui}/event/up`;
+    }
+
+    if (!baseTopic) return res.status(400).json({ message: "Unknown protocol config" });
+
+    const commandTopic = `${baseTopic}/set`;
+
+    let commandValue = value;
+    if (key === 'state' || key === 'state_l1') {
+      commandValue = value ? 'ON' : 'OFF'; 
+    }
+
+    const payload = { [key]: commandValue };
+
+    mqttService.publishCommand(commandTopic, payload);
+
+    res.status(200).json({ message: "Command sent successfully", topic: commandTopic });
+
+  } catch (error: any) {
+    console.error("❌ Control Device Error:", error);
     res.status(500).json({ message: error.message });
   }
 };
