@@ -1,9 +1,10 @@
 import mqtt from 'mqtt';
 import { pool } from '../config/db';
+import { Server } from 'socket.io';
 
 const MQTT_BROKER_URL = process.env.MQTT_BROKER_URL || 'mqtt://localhost:1883';
 
-export const initMqttClient = () => {
+export const initMqttClient = (io: Server) => {
   const client = mqtt.connect(MQTT_BROKER_URL);
 
   client.on('connect', () => {
@@ -60,7 +61,6 @@ export const initMqttClient = () => {
           } else if (upperVal === 'OFF') {
             numericValue = 0;
           } else {
-            // ลองแปลงตัวหนังสืออื่นๆ เป็นตัวเลข ถ้าแปลงไม่ได้ (NaN) ให้ข้ามไปเลย
             numericValue = parseFloat(rawValue);
             if (isNaN(numericValue)) {
               console.warn(`⚠️ Skipping non-numeric value: "${rawValue}" for key: "${key}"`);
@@ -75,6 +75,12 @@ export const initMqttClient = () => {
           VALUES ($1, $2, $3, NOW())
         `;
         await pool.query(insertQuery, [internalDeviceId, key, numericValue]);
+
+        io.emit('telemetry_update', {
+          device_id: internalDeviceId,
+          key: key,
+          value: numericValue
+        });
       }
 
       await pool.query('UPDATE device SET last_seen = NOW() WHERE id = $1', [internalDeviceId]);

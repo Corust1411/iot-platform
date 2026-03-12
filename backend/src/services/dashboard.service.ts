@@ -118,9 +118,16 @@ export const createDashboardWidget = async (dashboardId: number, data: any) => {
 
 export const getDashboardWidgets = async (dashboardId: number) => {
   const query = `
-    SELECT * FROM dashboard_widget 
-    WHERE dashboard_id = $1 
-    ORDER BY created_at ASC
+    SELECT 
+      w.*,
+      (
+        SELECT value FROM device_telemetry dt 
+        WHERE dt.device_id = w.device_id AND dt.key = w.data_key 
+        ORDER BY time DESC LIMIT 1
+      ) as current_value
+    FROM dashboard_widget w
+    WHERE w.dashboard_id = $1 
+    ORDER BY w.created_at ASC
   `;
   const result = await pool.query(query, [dashboardId]);
   return result.rows;
