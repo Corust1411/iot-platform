@@ -26,31 +26,33 @@ A comprehensive, full-stack IoT platform designed to manage and monitor devices 
 
 โปรเจกต์นี้แบ่งออกเป็น 2 ส่วนหลัก คือ `backend` (Node.js/Express) และ `website` (Vue.js) โดยใช้สถาปัตยกรรมแบบ Component-Based และ MVC
 
+```
 iot-platform/ 
-<br>├── backend/
-<br>│ ├── src/
-<br>│ │ ├── config/
-<br>│ │ ├── controllers/
-<br>│ │ ├── routes/
-<br>│ │ ├── services/
-<br>│ │ └── server.ts
-<br>│ ├── package.json
-<br>│ └── tsconfig.json
-<br>|
-<br>├── website/
-<br>│ ├── src/
-<br>│ │ ├── api/
-<br>│ │ ├── assets/
-<br>│ │ ├── components/
-<br>│ │ │ ├── widgets/
-<br>│ │ ├── router/
-<br>│ │ ├── views/
-<br>│ │ ├── App.vue
-<br>│ │ └── main.js
-<br>│ ├── package.json
-<br>│ └── vite.config.js
-<br>│
-<br>└── package.json
+├── backend/
+│ ├── src/
+│ │ ├── config/
+│ │ ├── controllers/
+│ │ ├── routes/
+│ │ ├── services/
+│ │ └── server.ts
+│ ├── package.json
+│ └── tsconfig.json
+|
+├── website/
+│ ├── src/
+│ │ ├── api/
+│ │ ├── assets/
+│ │ ├── components/
+│ │ │ ├── widgets/
+│ │ ├── router/
+│ │ ├── views/
+│ │ ├── App.vue
+│ │ └── main.js
+│ ├── package.json
+│ └── vite.config.js
+│
+└── package.json
+```
 
 ## Getting Started
 
