@@ -79,7 +79,7 @@
 
               <div v-if="widget.type === 'toggle'" class="toggle-widget">
                 <label class="switch">
-                  <input type="checkbox" v-model="widget.currentValue" @change="handleToggle(widget)">
+                  <input type="checkbox" :checked="widget.currentValue" @change="handleToggle(widget, $event)">
                   <span class="slider round"></span>
                 </label>
                 <div class="toggle-status">
@@ -302,7 +302,6 @@ export default {
       this.widgets = res.data.map(w => {
         let val = w.current_value !== null ? Number(w.current_value) : null;
         
-        // ถ้าเป็นปุ่ม Toggle เราต้องแปลง 1 เป็น true, 0 เป็น false ให้สวิตช์มันแสดงผลถูกต้อง
         if (w.type === 'toggle' && val !== null) {
           val = val === 1 ? true : false;
         }
@@ -327,9 +326,17 @@ export default {
         if (w.device_id === data.device_id && w.data_key === data.key) {
           
           if (w.type === 'toggle') {
-            w.currentValue = data.value === 1 ? true : false;
+            w.currentValue = (
+              Number(data.value) === 1 || 
+              data.value === 'ON' || 
+              data.value === true
+            );
           } else {
-            w.currentValue = data.value;
+            if (w.data_key === 'state' || w.data_key === 'state_l1') {
+              w.currentValue = (Number(data.value) === 1 || data.value === 'ON') ? 'ON' : 'OFF';
+            } else {
+              w.currentValue = data.value;
+            }
           }
           
         }
@@ -344,14 +351,13 @@ export default {
   },
 
   async deleteWidget(widgetId, title) {
-    this.activeWidgetMenu = null; // ปิดเมนู
+    this.activeWidgetMenu = null;
     const isConfirm = confirm(`Are you sure you want to delete widget "${title}"?`);
     
     if (isConfirm) {
       try {
         await http.delete(`/dashboards/${this.dashboardId}/widgets/${widgetId}`);
         
-        // ลบออกจาก Array บนหน้าจอทันที ไม่ต้องรีเฟรชหน้าเว็บ
         this.widgets = this.widgets.filter(w => w.id !== widgetId);
         
         alert('Widget deleted successfully!');
@@ -364,12 +370,12 @@ export default {
 
   editWidget(widget) {
     this.activeWidgetMenu = null;
-    // ลอจิกการแก้ไขจะตามมาครับ
     console.log("Edit widget clicked for:", widget.id);
     alert("เดี๋ยวเรามาทำหน้า Edit ต่อกันครับ!");
   },
-  async handleToggle(widget) {
-      const newValue = widget.currentValue;
+  async handleToggle(widget, event) {
+      const newValue = event.target.checked; 
+      widget.currentValue = newValue; 
       console.log(`Toggling ${widget.title} to:`, newValue);
 
       try {
@@ -383,6 +389,7 @@ export default {
         alert('Failed to control device');
         
         widget.currentValue = !newValue;
+        event.target.checked = !newValue;
       }
   },
   async openAddDeviceModal() {
