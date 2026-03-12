@@ -42,7 +42,7 @@
             <div class="form-row" v-if="form.type">
               <div class="form-group half-width">
                 <label>Widget Title <span class="required">*</span></label>
-                <input type="text" v-model="form.title" placeholder="e.g. Living Room Temp" :class="{ 'error-border': showError && !form.title }" />
+                <input type="text" v-model="form.title" placeholder="e.g. Living Room Temp" :class="{ 'error-border': showError && !form.title }">
               </div>
 
               <div class="form-group half-width">
@@ -109,7 +109,7 @@ export default {
       username: 'Unknown User',
       dashboardId: null,
       linkedDevices: [],
-      recentKeys: [], // เก็บ Parameter ที่ดึงมาจาก DB
+      recentKeys: [], 
       showError: false,
       form: {
         device_id: '',
@@ -125,31 +125,37 @@ export default {
     }
   },
   computed: {
-    // กรองประเภท Widget ตาม Category ของอุปกรณ์
     availableWidgetTypes() {
       const selectedDevice = this.linkedDevices.find(d => d.device_id === this.form.device_id);
       if (!selectedDevice) return [];
 
       const cat = (selectedDevice.category || '').toLowerCase();
       
-      // ถ้าเป็น Sensor (วัดค่าอย่างเดียว)
       if (cat === 'sensor') {
         return [
           { value: 'text', label: 'Text Display' },
           { value: 'gauge', label: 'Gauge Meter' },
-          { value: 'chart', label: 'Line Chart' },
-          { value: 'indicator', label: 'Status Indicator' }
+          { value: 'graph', label: 'Line graph' },
+          { value: 'status', label: 'Status' }
         ];
       } 
-      // ถ้าเป็น Actuator หรืออื่นๆ (สั่งงานได้)
-      else {
+      else if(cat === 'light'){
         return [
           { value: 'text', label: 'Text Display' },
           { value: 'toggle', label: 'Toggle Switch' },
-          { value: 'button', label: 'Push Button' },
           { value: 'slider', label: 'Slider' },
-          { value: 'indicator', label: 'Status Indicator' }
+          { value: 'status', label: 'Status' }
         ];
+      }
+      else {
+        return [
+          { value: 'text', label: 'Text Display' },
+          { value: 'gauge', label: 'Gauge Meter' },
+          { value: 'status', label: 'Status' },
+          { value: 'graph', label: 'Line graph' },
+          { value: 'toggle', label: 'Toggle Switch' },
+          { value: 'slider', label: 'Slider' },
+        ]
       }
     }
   },
@@ -215,6 +221,7 @@ export default {
     }
   }
 }
+
 </script>
 
 <style scoped>

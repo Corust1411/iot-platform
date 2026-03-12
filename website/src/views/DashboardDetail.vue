@@ -75,12 +75,16 @@
                 v-if="widget.type === 'text'" 
                 :widget="widget" 
               />
+              <WidgetGauge
+                v-else-if="widget.type === 'gauge'"
+                :widget="widget"
+              />
               <WidgetToggle 
                 v-else-if="widget.type === 'toggle'" 
                 :widget="widget" 
                 @toggle="handleToggle" 
               />
-
+              
               <div v-else class="text-gray text-small">
                 Preview for {{ widget.type }} coming soon...
               </div>
@@ -232,6 +236,22 @@
                   <input type="text" v-model="editWidgetForm.config.labelOff" placeholder="e.g. OFF, ปิด, Inactive" />
                 </div>
               </div>
+
+              <div v-else-if="editWidgetForm.type === 'gauge'">
+                <div class="form-group mb-16">
+                  <label>Unit</label>
+                  <input type="text" v-model="editWidgetForm.config.unit" placeholder="e.g. dBm, m" />
+                </div>
+                <div class="form-group mb-16">
+                  <label>Min Value</label>
+                  <input type="number" v-model="editWidgetForm.config.min" placeholder="e.g. -100" />
+                </div>
+                <div class="form-group">
+                  <label>Max Value</label>
+                  <input type="number" v-model="editWidgetForm.config.max" placeholder="e.g. 0" />
+                </div>
+              </div>
+
             </div>
 
             <div class="modal-footer">
@@ -256,10 +276,10 @@ import { io } from 'socket.io-client'
 
 import WidgetToggle from '../components/widgets/WidgetToggle.vue'
 import WidgetText from '../components/widgets/WidgetText.vue'
-
+import WidgetGauge from '../components/widgets/WidgetGauge.vue'
 
 export default {
-  components: { TopNavBar, SideNavBar, WidgetToggle, WidgetText },
+  components: { TopNavBar, SideNavBar, WidgetToggle, WidgetText, WidgetGauge},
 
   data() {
     return {
@@ -417,11 +437,22 @@ export default {
     editWidget(widget) {
       this.activeMenu = null;
       
+      let defaultConfig = {};
+      if (widget.type === 'text') {
+        defaultConfig = { unit: '' };
+      } else if (widget.type === 'toggle') {
+        defaultConfig = { labelOn: 'ON', labelOff: 'OFF' };
+      } else if (widget.type === 'gauge') {
+        defaultConfig = { unit: '', min: 0, max: 100 };
+      }
+
       this.editWidgetForm = {
         id: widget.id,
         title: widget.title,
         type: widget.type,
-        config: widget.config ? { ...widget.config } : { unit: '' }
+        config: widget.config && Object.keys(widget.config).length > 0 
+                ? { ...defaultConfig, ...widget.config } 
+                : { ...defaultConfig }
       };
       
       this.showEditWidgetModal = true;

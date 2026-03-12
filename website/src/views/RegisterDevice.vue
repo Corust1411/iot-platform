@@ -57,6 +57,7 @@
                 <option value="sensor">Sensor</option>
                 <option value="light">Light</option>
                 <option value="camera">Camera</option>
+                <option value="position">Position</option>
               </select>
               <span v-if="showError && !form.category" class="error-text">Category is required</span>
             </div>
