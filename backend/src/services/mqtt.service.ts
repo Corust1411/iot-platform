@@ -29,11 +29,11 @@ export const initMqttClient = (io: Server) => {
         SELECT d.id 
         FROM device d
         JOIN device_protocol_config c ON d.id = c.device_id
-        WHERE d.protocol = $1 
+        WHERE LOWER(d.protocol::text) = LOWER($1) 
         AND (
-          c.config->>'macAddress' = $2 OR 
-          c.config->>'ieeeAddr' = $2 OR 
-          c.config->>'devEui' = $2
+          LOWER(c.config->>'macAddress') = LOWER($2) OR 
+          LOWER(c.config->>'ieeeAddr') = LOWER($2) OR 
+          LOWER(c.config->>'devEui') = LOWER($2)
         )
       `;
       const deviceRes = await pool.query(findDeviceQuery, [payload.protocol, payload.device_id]);

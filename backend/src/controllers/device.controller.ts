@@ -197,3 +197,20 @@ export const controlDevice = async (req: AuthRequest, res: Response) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+export const getDeviceTelemetryHistory = async (req: AuthRequest, res: Response) => {
+  try {
+    const deviceId = parseInt(Array.isArray(req.params.id) ? req.params.id[0] : req.params.id);
+    const key = req.query.key as string; 
+    const range = req.query.range as string || '1h'; 
+
+    if (!key) {
+      return res.status(400).json({ message: "Data key is required" });
+    }
+
+    const history = await deviceService.getTelemetryHistory(deviceId, key, range);
+    res.status(200).json(history);
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};

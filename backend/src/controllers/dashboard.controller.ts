@@ -113,6 +113,7 @@ export const createDashboardWidget = async (req: AuthRequest, res: Response) => 
     const widget = await dashboardService.createDashboardWidget(dashboardId, widgetData);
     res.status(201).json(widget);
   } catch (error: any) {
+    console.error("❌ Create Widget Error:", error); 
     res.status(500).json({ message: error.message });
   }
 };

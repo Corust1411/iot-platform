@@ -79,6 +79,10 @@
                 v-else-if="widget.type === 'gauge'"
                 :widget="widget"
               />
+              <WidgetGraph 
+                v-else-if="widget.type === 'graph'" 
+                :widget="widget" 
+              />
               <WidgetToggle 
                 v-else-if="widget.type === 'toggle'" 
                 :widget="widget" 
@@ -257,6 +261,33 @@
                   <input type="number" v-model="editWidgetForm.config.max" placeholder="e.g. 0" />
                 </div>
               </div>
+              <div v-else-if="editWidgetForm.type === 'graph'">
+                <div class="form-group mb-16">
+                  <label>Instance Name (Legend)</label>
+                  <input type="text" v-model="editWidgetForm.config.instanceName" placeholder="e.g. Temp Sensor 1" />
+                </div>
+                
+                <div class="form-group mb-16" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                  <div>
+                    <label>Time Range</label>
+                    <select v-model="editWidgetForm.config.timeRange" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #d1d5db;">
+                      <option value="1h">Last 1 Hour</option>
+                      <option value="6h">Last 6 Hours</option>
+                      <option value="24h">Last 24 Hours</option>
+                      <option value="7d">Last 7 Days</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label>Line Color</label>
+                    <input type="color" v-model="editWidgetForm.config.lineColor" style="width: 100%; height: 38px; padding: 2px; border: 1px solid #d1d5db; border-radius: 8px; cursor: pointer;" />
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label>Unit (Optional)</label>
+                  <input type="text" v-model="editWidgetForm.config.unit" placeholder="e.g. °C, %, Lux" />
+                </div>
+              </div>
               <div v-else-if="editWidgetForm.type === 'slider'">
                 <div class="form-group mb-16">
                   <label>Unit (Optional)</label>
@@ -285,6 +316,10 @@
       </div>
     </div> <!--layout-->
   </div> <!--app-wrapper-->
+  <div v-if="showToast" class="toast-notification">
+    <span class="material-symbols-outlined">check_circle</span>
+    {{ toastMessage }}
+  </div>
 </template>
 
 <script>
@@ -297,9 +332,10 @@ import WidgetToggle from '../components/widgets/WidgetToggle.vue'
 import WidgetText from '../components/widgets/WidgetText.vue'
 import WidgetGauge from '../components/widgets/WidgetGauge.vue'
 import WidgetSlider from '../components/widgets/WidgetSlider.vue'
+import WidgetGraph from '../components/widgets/WidgetGraph.vue'
 
 export default {
-  components: { TopNavBar, SideNavBar, WidgetToggle, WidgetText, WidgetGauge, WidgetSlider },
+  components: { TopNavBar, SideNavBar, WidgetToggle, WidgetText, WidgetGauge, WidgetSlider, WidgetGraph },
 
   data() {
     return {
@@ -327,6 +363,8 @@ export default {
         config: {}
       },
       availableDataKeys: [],
+      showToast: false,
+      toastMessage: '',
     }
   },
   async mounted() {
@@ -337,7 +375,10 @@ export default {
     if (dashboardId) {
       await this.fetchDashboardDetail(dashboardId);
     }
-    
+    if (this.$route.query.action === 'created') {
+      this.triggerToast('Widget created successfully!');
+      this.$router.replace({ path: `/dashboard/${this.$route.params.id}` });
+    }
     this.setupSocket();
     
     document.addEventListener('click', this.closeMenu);
@@ -471,6 +512,7 @@ export default {
       if (widget.type === 'text') defaultConfig = { unit: '' };
       else if (widget.type === 'gauge') defaultConfig = { unit: '', min: -100, max: 100 };
       else if (widget.type === 'slider') defaultConfig = { unit: '', min: 0, max: 100 };
+      else if (widget.type === 'graph') defaultConfig = { unit: '', timeRange: '1h', instanceName: '', lineColor: '#3b82f6'};
 
       this.editWidgetForm = {
         id: widget.id,
@@ -593,6 +635,14 @@ export default {
     },
     cancelEditInfo() {
       this.isEditingInfo = false;
+    },
+    triggerToast(message) {
+      this.toastMessage = message;
+      this.showToast = true;
+      
+      setTimeout(() => {
+        this.showToast = false;
+      }, 3000);
     },
   }
 }
@@ -892,4 +942,31 @@ input:focus + .slider { box-shadow: 0 0 1px #10b981; }
 input:checked + .slider:before { transform: translateX(26px); }
 .slider.round { border-radius: 34px; }
 .slider.round:before { border-radius: 50%; }
+
+.toast-notification {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  background-color: #10b981;
+  color: white;
+  padding: 14px 24px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+  font-size: 15px;
+  box-shadow: 0 10px 25px -5px rgba(16, 185, 129, 0.4);
+  z-index: 9999;
+  animation: slideInUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.toast-notification .material-symbols-outlined {
+  font-size: 20px;
+}
+
+@keyframes slideInUp {
+  0% { transform: translateY(100px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
 </style>

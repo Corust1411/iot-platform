@@ -92,7 +92,7 @@ export default {
 
 .gauge-fill {
   fill: none;
-  stroke: #3b82f6;
+  stroke: #FE7743;
   stroke-width: 12;
   stroke-linecap: round;
   stroke-dasharray: 125.66; 
