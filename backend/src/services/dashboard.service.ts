@@ -133,13 +133,13 @@ export const getDashboardWidgets = async (dashboardId: number) => {
   return result.rows;
 };
 
-export const updateWidget = async (widgetId: number, title: string, config: any) => {
+export const updateWidget = async (widgetId: number, title: string, data_key: string, config: any) => {
   const query = `
     UPDATE dashboard_widget 
-    SET title = $1, config = $2 
-    WHERE id = $3 RETURNING *
+    SET title = $1, data_key = $2, config = $3 
+    WHERE id = $4 RETURNING *
   `;
-  const result = await pool.query(query, [title, config, widgetId]);
+  const result = await pool.query(query, [title, data_key, config, widgetId]);
   return result.rows[0];
 };
 

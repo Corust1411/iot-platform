@@ -76,7 +76,6 @@ export const getDeviceById = async (accountId: number, deviceId: number) => {
     LEFT JOIN mqtt_topic m ON d.id = m.device_id
     WHERE d.id = $1 AND d.account_id = $2
   `;
-  // important to ensure device belongs to the account for security
   const result = await pool.query(query, [deviceId, accountId]);
   
   if (result.rows.length === 0) {
@@ -92,7 +91,6 @@ export const deleteDeviceById = async (accountId: number, deviceId: number) => {
   try {
     await client.query('BEGIN');
 
-    // 1. ดึงข้อมูลอุปกรณ์ออกมาก่อน เพื่อดู Protocol และ Config
     const getDeviceQuery = `
       SELECT d.protocol, c.config
       FROM device d
@@ -188,4 +186,23 @@ export const getDeviceTelemetryKeys = async (deviceId: number) => {
   const query = `SELECT DISTINCT key FROM device_telemetry WHERE device_id = $1`;
   const result = await pool.query(query, [deviceId]);
   return result.rows.map(row => row.key);
+};
+
+export const getTelemetryHistory = async (deviceId: number, key: string, range: string) => {
+  let timeInterval = '1 hour';
+  if (range === '6h') timeInterval = '6 hours';
+  else if (range === '24h') timeInterval = '24 hours';
+  else if (range === '7d') timeInterval = '7 days';
+
+  const query = `
+    SELECT value, time as timestamp 
+    FROM device_telemetry 
+    WHERE device_id = $1 AND key = $2 
+      AND time >= NOW() - INTERVAL '${timeInterval}'
+    ORDER BY time ASC
+    LIMIT 100;
+  `;
+  
+  const result = await pool.query(query, [deviceId, key]);
+  return result.rows;
 };

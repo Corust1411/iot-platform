@@ -42,7 +42,7 @@
             <div class="form-row" v-if="form.type">
               <div class="form-group half-width">
                 <label>Widget Title <span class="required">*</span></label>
-                <input type="text" v-model="form.title" placeholder="e.g. Living Room Temp" :class="{ 'error-border': showError && !form.title }" />
+                <input type="text" v-model="form.title" placeholder="e.g. Living Room Temp" :class="{ 'error-border': showError && !form.title }">
               </div>
 
               <div class="form-group half-width">
@@ -65,7 +65,7 @@
               <h3 class="subsection-title mt-16">Display Settings</h3>
               
               <div class="form-row">
-                <div class="form-group half-width" v-if="['text', 'gauge', 'chart', 'slider'].includes(form.type)">
+                <div class="form-group half-width" v-if="['text', 'gauge', 'graph', 'slider'].includes(form.type)">
                   <label>Unit (Optional)</label>
                   <input type="text" v-model="form.config.unit" placeholder="e.g. °C, %, Lux" />
                 </div>
@@ -80,6 +80,29 @@
                       <label>Max Value</label>
                       <input type="number" v-model.number="form.config.max" placeholder="100" />
                     </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-section" v-if="form.type === 'graph'">
+                <div class="form-group">
+                  <label>Instance Name (Legend)</label>
+                  <input type="text" v-model="form.config.instanceName" placeholder="e.g. Temp Sensor 1" />
+                </div>
+                
+                <div class="form-row">
+                  <div class="form-group half-width">
+                    <label>Time Range</label>
+                    <select v-model="form.config.timeRange">
+                      <option value="1h">Last 1 Hour</option>
+                      <option value="6h">Last 6 Hours</option>
+                      <option value="24h">Last 24 Hours</option>
+                      <option value="7d">Last 7 Days</option>
+                    </select>
+                  </div>
+                  <div class="form-group half-width">
+                    <label>Line Color</label>
+                    <input type="color" v-model="form.config.lineColor" style="height: 38px; padding: 2px; cursor: pointer;" />
                   </div>
                 </div>
               </div>
@@ -109,7 +132,7 @@ export default {
       username: 'Unknown User',
       dashboardId: null,
       linkedDevices: [],
-      recentKeys: [], // เก็บ Parameter ที่ดึงมาจาก DB
+      recentKeys: [], 
       showError: false,
       form: {
         device_id: '',
@@ -119,37 +142,45 @@ export default {
         config: {
           unit: '',
           min: 0,
-          max: 100
-        }
+          max: 100,
+          timeRange: '1h',
+          lineColor: '#3b82f6',
+          instanceName: '',
+        },
       }
     }
   },
   computed: {
-    // กรองประเภท Widget ตาม Category ของอุปกรณ์
     availableWidgetTypes() {
       const selectedDevice = this.linkedDevices.find(d => d.device_id === this.form.device_id);
       if (!selectedDevice) return [];
 
       const cat = (selectedDevice.category || '').toLowerCase();
       
-      // ถ้าเป็น Sensor (วัดค่าอย่างเดียว)
       if (cat === 'sensor') {
         return [
           { value: 'text', label: 'Text Display' },
           { value: 'gauge', label: 'Gauge Meter' },
-          { value: 'chart', label: 'Line Chart' },
-          { value: 'indicator', label: 'Status Indicator' }
+          { value: 'graph', label: 'Line graph' },
         ];
       } 
-      // ถ้าเป็น Actuator หรืออื่นๆ (สั่งงานได้)
+      else if(cat === 'light'){
+        return [
+          { value: 'text', label: 'Text Display' },
+          { value: 'gauge', label: 'Gauge Meter' },
+          { value: 'graph', label: 'Line graph' },
+          { value: 'toggle', label: 'Toggle Switch' },
+          { value: 'slider', label: 'Slider' },
+        ];
+      }
       else {
         return [
           { value: 'text', label: 'Text Display' },
+          { value: 'gauge', label: 'Gauge Meter' },
+          { value: 'graph', label: 'Line graph' },
           { value: 'toggle', label: 'Toggle Switch' },
-          { value: 'button', label: 'Push Button' },
           { value: 'slider', label: 'Slider' },
-          { value: 'indicator', label: 'Status Indicator' }
-        ];
+        ]
       }
     }
   },
@@ -161,6 +192,13 @@ export default {
     if (this.dashboardId) {
       await this.fetchLinkedDevices();
     }
+    if (this.$route.query.action === 'created') {
+      this.triggerToast('Widget created successfully!');
+      
+      this.$router.replace({ path: `/dashboard/${this.$route.params.id}` });
+    }
+    
+    document.addEventListener('click', this.closeMenu);
   },
   methods: {
     goBack() {
@@ -194,11 +232,16 @@ export default {
       this.showError = false;
 
       let finalConfig = { unit: this.form.config.unit };
+      
       if (['gauge', 'slider'].includes(this.form.type)) {
         finalConfig.min = this.form.config.min;
         finalConfig.max = this.form.config.max;
+      } 
+      else if (this.form.type === 'graph') {
+        finalConfig.timeRange = this.form.config.timeRange;
+        finalConfig.lineColor = this.form.config.lineColor;
+        finalConfig.instanceName = this.form.config.instanceName || this.form.data_key;
       }
-
       const payload = {
         ...this.form,
         config: finalConfig
@@ -206,15 +249,20 @@ export default {
 
       try {
         await http.post(`/dashboards/${this.dashboardId}/widgets`, payload);
-        alert('Widget created successfully!');
-        this.goBack();
+        
+        this.$router.push({
+          path: `/dashboard/${this.dashboardId}`,
+          query: { action: 'created' } 
+        });
+        
       } catch (error) {
         console.error("Error creating widget:", error);
-        alert('Failed to create widget.');
+        alert('Failed to create widget. Check backend console for details.');
       }
-    }
+    },
   }
 }
+
 </script>
 
 <style scoped>

@@ -57,6 +57,7 @@
                 <option value="sensor">Sensor</option>
                 <option value="light">Light</option>
                 <option value="camera">Camera</option>
+                <option value="position">Position</option>
               </select>
               <span v-if="showError && !form.category" class="error-text">Category is required</span>
             </div>
@@ -270,12 +271,6 @@
         </div>
       </div>
     </div>
-    <transition name="fade">
-      <div v-if="showToast" class="toast-notification">
-        <span class="material-symbols-outlined">check_circle</span>
-        {{ toastMessage }}
-      </div>
-    </transition>
   </div>
 </template>
 
@@ -291,8 +286,6 @@ export default {
       username: 'Unknown User',
       step: 1,
       showError: false,
-      showToast: false,
-      toastMessage: '',
       form: {
         name: '',
         category: '',
@@ -367,7 +360,6 @@ export default {
       
       try {
         await http.post('/devices/zigbee/permit-join');
-        this.triggerToast('Pairing mode enabled. Please activate your device.');
         
         this.scanTimer = setInterval(() => {
           this.scanCountdown--;
@@ -401,14 +393,12 @@ export default {
     selectZigbeeDevice(zDevice) {
       if (this.form.ieeeAddr === zDevice.ieeeAddr) {
         this.form.ieeeAddr = ''; 
-        this.triggerToast('Device deselected.');
       } 
       else {
         this.form.ieeeAddr = zDevice.ieeeAddr;
         if (!this.form.name.trim()) {
           this.form.name = zDevice.friendlyName; 
         }
-        this.triggerToast(`${zDevice.friendlyName} selected!`);
         this.showError = false;
       }
     },
@@ -449,9 +439,12 @@ export default {
 
       try {
         await http.post('/devices', payload);
-        this.$router.push('/manage-device'); 
+        this.$router.push({
+          path: '/manage-device',
+          query: { action: 'created' }
+        });
       } catch (err) {
-        console.error('Failed to create device:', err);
+        console.error('Failed to register device:', err);
         const errorMsg = err.response?.data?.message || 'Unknown error occurred';
         alert(`Error: ${errorMsg}`);
       }
@@ -468,15 +461,9 @@ export default {
       if (!text || text === '-') return;
       try {
         await navigator.clipboard.writeText(text);
-        this.triggerToast('Text copied to clipboard!');
       } catch (err) {
         console.error('Failed to copy', err);
       }
-    },
-    triggerToast(message) {
-      this.toastMessage = message;
-      this.showToast = true;
-      setTimeout(() => { this.showToast = false; }, 3000); 
     }
   }
 }
@@ -544,23 +531,13 @@ textarea { min-height: 80px; resize: none; }
 .action-icon:hover { color: #FF4B4A; }
 
 /* Zigbee Specific CSS */
-.zigbee-scan-container {
-  background-color: #f9fafb;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 24px;
-}
+.zigbee-scan-container { background-color: #f9fafb; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; }
 .scan-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
 .scan-title { font-size: 16px; font-weight: 700; color: #1e293b; margin: 0 0 4px 0; }
 .scan-subtitle { font-size: 13px; color: #64748b; margin: 0; }
 .scan-actions { display: flex; gap: 8px; align-items: center; }
 
-.device-list-box {
-  background: white;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  overflow: hidden;
-}
+.device-list-box { background: white; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; }
 .empty-state-small { text-align: center; padding: 30px; color: #94a3b8; font-size: 14px; }
 .zigbee-table { width: 100%; border-collapse: collapse; text-align: left; }
 .zigbee-table th { background-color: #f8fafc; padding: 12px 16px; font-size: 13px; color: #475569; border-bottom: 1px solid #e2e8f0; }
@@ -574,35 +551,12 @@ textarea { min-height: 80px; resize: none; }
 .badge-gray { background: #e2e8f0; color: #334155; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
 .code-font { font-family: 'Courier New', Courier, monospace; }
 
-.add-dev-btn {
-  background-color: white;
-  color: #FF4B4A;
-  border: 1px solid #FF4B4A;
-  padding: 6px 16px;
-  border-radius: 20px;
-  font-weight: 600;
-  font-size: 13px;
-  cursor: pointer;
-  transition: 0.2s;
-}
+.add-dev-btn { background-color: white; color: #FF4B4A; border: 1px solid #FF4B4A; padding: 6px 16px; border-radius: 20px; font-weight: 600; font-size: 13px; cursor: pointer; transition: 0.2s; }
 .add-dev-btn:hover { background-color: #fef2f2; }
-.selected-btn {
-  background-color: #10b981;
-  color: white;
-  border-color: #10b981;
-}
+.selected-btn { background-color: #10b981; color: white; border-color: #10b981; }
 .selected-btn:hover { background-color: #059669; }
 .text-right { text-align: right; }
 
 .spin-anim { animation: spin 2s linear infinite; }
 @keyframes spin { 100% { transform: rotate(360deg); } }
-
-.toast-notification {
-  position: fixed; bottom: 40px; right: 40px; background-color: #7B7B7B; 
-  color: white; padding: 12px 24px; border-radius: 8px; display: flex; align-items: center; gap: 10px;
-  box-shadow: 0 10px 15px -3px rgba(134, 134, 134, 0.3); z-index: 9999; font-weight: 600; font-size: 14px;
-}
-.toast-notification .material-symbols-outlined { font-size: 22px; }
-.fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease, transform 0.3s ease; }
-.fade-enter-from, .fade-leave-to { opacity: 0; transform: translateY(20px); }
 </style>

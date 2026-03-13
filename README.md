@@ -1,4 +1,4 @@
-# Multi-protocol IoT Platform
+<br># Multi-protocol IoT Platform
 
 ![Vue.js](https://img.shields.io/badge/Vue.js-35495E?style=for-the-badge&logo=vuedotjs&logoColor=4FC08D)
 ![Node.js](https://img.shields.io/badge/Node.js-43853D?style=for-the-badge&logo=node.js&logoColor=white)
@@ -22,28 +22,44 @@ A comprehensive, full-stack IoT platform designed to manage and monitor devices 
 - **Database:** PostgreSQL with TimescaleDB Extension
 - **IoT/Gateway:** Raspberry Pi, Node-RED, Zigbee2MQTT, ChirpStack, MQTT Broker (Mosquitto)
 
+# 📁 Project Structure
 
-## Project Structure
+โปรเจกต์นี้แบ่งออกเป็น 2 ส่วนหลัก คือ `backend` (Node.js/Express) และ `website` (Vue.js) โดยใช้สถาปัตยกรรมแบบ Component-Based และ MVC
 
-📦 multi-protocol-iot-platform
- ┣ 📂 backend                 # Node.js, Express, Services, Controllers
- ┃ ┣ 📂 src
- ┃ ┃ ┣ 📂 controllers         # API logic (Account, Device, Dashboard)
- ┃ ┃ ┣ 📂 middlewares         # JWT Auth, Role-based validation
- ┃ ┃ ┣ 📂 routes              # Express routing
- ┃ ┃ ┗ 📂 services            # DB Queries, Node-RED HTTP requests
- ┣ 📂 frontend                # Vue 3 UI Application
- ┃ ┣ 📂 src
- ┃ ┃ ┣ 📂 components          # Reusable UI (TopBar, SideNav, Modals)
- ┃ ┃ ┣ 📂 views               # Pages (ManageAccount, DashboardDetail)
- ┃ ┃ ┗ 📂 router              # Vue Router with Navigation Guards
- ┣ 📜 package.json            # Root workspace configuration
- ┗ 📜 README.md               # Project documentation
+```
+iot-platform/ 
+├── backend/
+│ ├── src/
+│ │ ├── config/
+│ │ ├── controllers/
+│ │ ├── routes/
+│ │ ├── services/
+│ │ └── server.ts
+│ ├── package.json
+│ └── tsconfig.json
+|
+├── website/
+│ ├── src/
+│ │ ├── api/
+│ │ ├── assets/
+│ │ ├── components/
+│ │ │ ├── widgets/
+│ │ ├── router/
+│ │ ├── views/
+│ │ ├── App.vue
+│ │ └── main.js
+│ ├── package.json
+│ └── vite.config.js
+│
+└── package.json
+```
 
 ## Getting Started
 
 ### Prerequisites
+
 Make sure you have the following installed on your machine:
+
 - [Node.js](https://nodejs.org/) (v18 or higher)
 - [PostgreSQL](https://www.postgresql.org/) with [TimescaleDB](https://www.timescale.com/)
 - An active MQTT Broker
