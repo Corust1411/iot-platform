@@ -73,15 +73,12 @@ export default defineComponent({
     await this.fetchHistoryData();
   },
   methods: {
-    // 🟢 3. ฟังก์ชันแยกสำหรับจัดรูปแบบวันที่แกน X
     formatTime(dateObj) {
       const d = new Date(dateObj);
-      // ถ้าดูข้อมูล 24h หรือ 7d ให้เติม วัน/เดือน เข้าไปด้วย
       if (this.timeRange === '24h' || this.timeRange === '7d') {
         return d.toLocaleDateString('th-TH', { day: '2-digit', month: 'short' }) + ' ' + 
                d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
       }
-      // ถ้า 1h หรือ 6h โชว์แค่เวลาพอ
       return d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
     },
 
@@ -94,7 +91,6 @@ export default defineComponent({
 
         const dataPoints = res.data.length > 0 ? res.data : [{ timestamp: new Date(), value: this.widget.currentValue || 0 }];
 
-        // 🟢 ใช้ฟังก์ชัน formatTime กับข้อมูลอดีต
         const labels = dataPoints.map(d => this.formatTime(d.timestamp));
         const values = dataPoints.map(d => Number(d.value));
 
@@ -107,7 +103,7 @@ export default defineComponent({
               borderColor: this.lineColor,
               data: values,
               tension: 0.3,
-              pointRadius: 1, // ปรับจุดให้เล็กลงเวลามีข้อมูลเยอะๆ
+              pointRadius: 1,
               borderWidth: 2
             }
           ]

@@ -16,7 +16,6 @@ export default {
   },
   computed: {
     displayValue() {
-      // ถ้าค่าเป็น null หรือ undefined ให้โชว์เครื่องหมาย --
       if (this.widget.currentValue === null || this.widget.currentValue === undefined) {
         return '--';
       }
