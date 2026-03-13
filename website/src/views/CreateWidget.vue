@@ -136,7 +136,6 @@ export default {
           { value: 'text', label: 'Text Display' },
           { value: 'gauge', label: 'Gauge Meter' },
           { value: 'graph', label: 'Line graph' },
-          { value: 'status', label: 'Status' }
         ];
       } 
       else if(cat === 'light'){
@@ -144,14 +143,12 @@ export default {
           { value: 'text', label: 'Text Display' },
           { value: 'toggle', label: 'Toggle Switch' },
           { value: 'slider', label: 'Slider' },
-          { value: 'status', label: 'Status' }
         ];
       }
       else {
         return [
           { value: 'text', label: 'Text Display' },
           { value: 'gauge', label: 'Gauge Meter' },
-          { value: 'status', label: 'Status' },
           { value: 'graph', label: 'Line graph' },
           { value: 'toggle', label: 'Toggle Switch' },
           { value: 'slider', label: 'Slider' },

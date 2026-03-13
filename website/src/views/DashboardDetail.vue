@@ -84,7 +84,12 @@
                 :widget="widget" 
                 @toggle="handleToggle" 
               />
-              
+              <WidgetSlider 
+                v-else-if="widget.type === 'slider'" 
+                :widget="widget" 
+                @slide="handleSliderControl" 
+              />
+
               <div v-else class="text-gray text-small">
                 Preview for {{ widget.type }} coming soon...
               </div>
@@ -238,7 +243,6 @@
                 <label>Unit (Optional)</label>
                 <input type="text" v-model="editWidgetForm.config.unit" placeholder="e.g. °C, %, Lux" />
               </div>
-
               <div v-else-if="editWidgetForm.type === 'gauge'">
                 <div class="form-group mb-16">
                   <label>Unit</label>
@@ -251,6 +255,20 @@
                 <div class="form-group">
                   <label>Max Value</label>
                   <input type="number" v-model="editWidgetForm.config.max" placeholder="e.g. 0" />
+                </div>
+              </div>
+              <div v-else-if="editWidgetForm.type === 'slider'">
+                <div class="form-group mb-16">
+                  <label>Unit (Optional)</label>
+                  <input type="text" v-model="editWidgetForm.config.unit" placeholder="e.g. %, Lux" />
+                </div>
+                <div class="form-group mb-16">
+                  <label>Min Value</label>
+                  <input type="number" v-model="editWidgetForm.config.min" placeholder="e.g. 0" />
+                </div>
+                <div class="form-group">
+                  <label>Max Value</label>
+                  <input type="number" v-model="editWidgetForm.config.max" placeholder="e.g. 100" />
                 </div>
               </div>
             </div>
@@ -278,9 +296,10 @@ import { io } from 'socket.io-client'
 import WidgetToggle from '../components/widgets/WidgetToggle.vue'
 import WidgetText from '../components/widgets/WidgetText.vue'
 import WidgetGauge from '../components/widgets/WidgetGauge.vue'
+import WidgetSlider from '../components/widgets/WidgetSlider.vue'
 
 export default {
-  components: { TopNavBar, SideNavBar, WidgetToggle, WidgetText, WidgetGauge},
+  components: { TopNavBar, SideNavBar, WidgetToggle, WidgetText, WidgetGauge, WidgetSlider },
 
   data() {
     return {
@@ -449,12 +468,9 @@ export default {
       this.activeMenu = null;
       
       let defaultConfig = {};
-      if (widget.type === 'text') {
-        defaultConfig = { unit: '' };
-      }
-      else if (widget.type === 'gauge') {
-        defaultConfig = { unit: '', min: 0, max: 100 };
-      }
+      if (widget.type === 'text') defaultConfig = { unit: '' };
+      else if (widget.type === 'gauge') defaultConfig = { unit: '', min: -100, max: 100 };
+      else if (widget.type === 'slider') defaultConfig = { unit: '', min: 0, max: 100 };
 
       this.editWidgetForm = {
         id: widget.id,
@@ -515,6 +531,23 @@ export default {
           widget.currentValue = !newValue;
           event.target.checked = !newValue;
         }
+    },
+    async handleSliderControl(widget, newValue) {
+      console.log(`Sliding ${widget.title} to:`, newValue);
+
+      widget.currentValue = newValue;
+
+      try {
+        await http.post(`/devices/${widget.device_id}/control`, {
+          key: widget.data_key,
+          value: newValue
+        });
+      } catch (error) {
+        console.error("Failed to send slider command:", error);
+        alert('Failed to control device via slider');
+
+        widget.currentValue = !newValue;
+      }
     },
     async openAddDeviceModal() {
       this.selectedDeviceId = null;
@@ -801,9 +834,9 @@ export default {
 
 /* บังคับให้เป็น Grid สำหรับตาราง */
 .table-header, .table-row { 
-  display: grid; /* เพิ่มบรรทัดนี้ */
+  display: grid;
   grid-template-columns: 3fr 2fr 60px; 
-  align-items: center; /* จัดให้อยู่ตรงกลางแนวตั้ง */
+  align-items: center;
   padding: 12px 16px; 
 }
 .table-header { font-weight: 700; color: #4b5563; font-size: 13px; border-bottom: 1px solid #e2e8f0; background: #f1f5f9; }
