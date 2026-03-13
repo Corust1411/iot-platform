@@ -316,10 +316,12 @@
       </div>
     </div> <!--layout-->
   </div> <!--app-wrapper-->
-  <div v-if="showToast" class="toast-notification">
-    <span class="material-symbols-outlined">check_circle</span>
-    {{ toastMessage }}
-  </div>
+  <transition name="fade">
+      <div v-if="showToast" class="toast-notification">
+        <span class="material-symbols-outlined">check_circle</span>
+        {{ toastMessage }}
+      </div>
+    </transition>
 </template>
 
 <script>
@@ -943,27 +945,11 @@ input:checked + .slider:before { transform: translateX(26px); }
 .slider.round { border-radius: 34px; }
 .slider.round:before { border-radius: 50%; }
 
-.toast-notification {
-  position: fixed;
-  bottom: 30px;
-  right: 30px;
-  background-color: #10b981;
-  color: white;
-  padding: 14px 24px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-weight: 600;
-  font-size: 15px;
-  box-shadow: 0 10px 25px -5px rgba(16, 185, 129, 0.4);
-  z-index: 9999;
-  animation: slideInUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
 
-.toast-notification .material-symbols-outlined {
-  font-size: 20px;
-}
+.toast-notification { position: fixed; bottom: 40px; right: 40px; background-color: #111827; color: white; padding: 12px 24px; border-radius: 8px; display: flex; align-items: center; gap: 10px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.2); z-index: 9999; font-weight: 600; font-size: 14px; }
+.toast-notification .material-symbols-outlined { font-size: 22px; color: #10b981; }
+.fade-enter-active, .fade-leave-active { transition: opacity 0.3s, transform 0.3s; }
+.fade-enter-from, .fade-leave-to { opacity: 0; transform: translateY(20px); }
 
 @keyframes slideInUp {
   0% { transform: translateY(100px); opacity: 0; }

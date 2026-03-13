@@ -234,7 +234,6 @@ export default {
     async deleteDevice() {
         try {
           await http.delete(`/devices/${this.device.id}`);
-          alert('Device deleted successfully.');
           this.$router.push('/manage-device');
         } catch (error) {
           console.error("Error deleting device:", error);

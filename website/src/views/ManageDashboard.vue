@@ -342,4 +342,9 @@ export default {
 .toast-notification .material-symbols-outlined { font-size: 22px; color: #10b981; }
 .fade-enter-active, .fade-leave-active { transition: opacity 0.3s, transform 0.3s; }
 .fade-enter-from, .fade-leave-to { opacity: 0; transform: translateY(20px); }
+
+@keyframes slideInUp {
+  0% { transform: translateY(100px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
 </style>
