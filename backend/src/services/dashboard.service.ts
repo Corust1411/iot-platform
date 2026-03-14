@@ -12,22 +12,34 @@ export const createDashboard = async (accountId: number, name: string, descripti
 
 export const getDashboardsByAccountId = async (accountId: number) => {
   const query = `
+    WITH user_dashboards AS (
+      SELECT id, name, description, created_at, 'owner' as role
+      FROM dashboard
+      WHERE account_id = $1
+      
+      UNION
+
+      SELECT d.id, d.name, d.description, d.created_at, ds.permission as role
+      FROM dashboard d
+      JOIN dashboard_share ds ON d.id = ds.dashboard_id
+      WHERE ds.account_id = $1
+    )
     SELECT 
-      d.id, 
-      d.name, 
-      d.description, 
-      d.created_at,
+      ud.id, 
+      ud.name, 
+      ud.description, 
+      ud.created_at,
+      ud.role,
       COALESCE(
         json_agg(
           json_build_object('alias', dd.alias, 'device_name', dev.name)
         ) FILTER (WHERE dd.id IS NOT NULL), '[]'
       ) as devices
-    FROM dashboard d
-    LEFT JOIN dashboard_device dd ON d.id = dd.dashboard_id
+    FROM user_dashboards ud
+    LEFT JOIN dashboard_device dd ON ud.id = dd.dashboard_id
     LEFT JOIN device dev ON dd.device_id = dev.id
-    WHERE d.account_id = $1
-    GROUP BY d.id
-    ORDER BY d.created_at DESC;
+    GROUP BY ud.id, ud.name, ud.description, ud.created_at, ud.role
+    ORDER BY ud.created_at DESC;
   `;
   const result = await pool.query(query, [accountId]);
   return result.rows;
@@ -58,7 +70,18 @@ export const deleteDashboard = async (accountId: number, dashboardId: number) =>
 
 /* for dashboardDetails */
 export const getDashboardById = async (accountId: number, dashboardId: number) => {
-  const query = 'SELECT id, name, description FROM dashboard WHERE id = $1 AND account_id = $2';
+  const query = `
+    SELECT d.*, 'owner' as role 
+    FROM dashboard d 
+    WHERE d.id = $1 AND d.account_id = $2
+    
+    UNION
+    
+    SELECT d.*, ds.permission as role 
+    FROM dashboard d 
+    JOIN dashboard_share ds ON d.id = ds.dashboard_id 
+    WHERE d.id = $1 AND ds.account_id = $2
+  `;
   const result = await pool.query(query, [dashboardId, accountId]);
   return result.rows[0];
 };

@@ -20,6 +20,7 @@
               <span>Name</span>
               <span>Description</span>
               <span>Devices Used</span>
+              <span>Role</span>
               <span class="text-right">Action</span>
             </div>
 
@@ -31,7 +32,6 @@
             >
               <span class="fw-bold">{{ dash.name }}</span>
               <span class="text-gray line-clamp">{{ dash.description || '-' }}</span>
-              
               <span class="device-tags">
                 <span 
                   v-for="(dev, index) in (dash.devices || []).slice(0, 4)" 
@@ -49,9 +49,17 @@
                   -
                 </span>
               </span>
-              
+              <span>
+                <span v-if="dash.role === 'owner'" class="badge bg-green">Owner</span>
+                <span v-else-if="dash.role === 'edit'" class="badge bg-blue">Editor</span>
+                <span v-else-if="dash.role === 'view'" class="badge bg-gray">Viewer</span>
+              </span>
               <span class="text-right action-wrapper">
-                <button class="icon-btn" @click.stop="toggleMenu(dash.id)">
+                <button 
+                  v-if="dash.role !== 'view'" 
+                  class="icon-btn" 
+                  @click.stop="toggleMenu(dash.id)"
+                >
                   <span class="material-symbols-outlined">more_vert</span>
                 </button>
                 
@@ -279,18 +287,29 @@ export default {
 .dashboard-card { background: #ffffff; padding: 24px; min-height: 70vh; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); border: 1px solid #e5e7eb; display: flex; flex-direction: column; }
 .table-container { display: flex; flex-direction: column; background-color: #DEE5ED; border-radius: 10px; padding: 0 1vh; flex: 1; overflow-y: auto; }
 
-.table-header, .table-row { display: grid; grid-template-columns: 2fr 3fr 3fr 60px; align-items: center; padding: 16px 12px; }
+.table-header, .table-row { display: grid; grid-template-columns: 2fr 3fr 3fr 0.5fr 60px; align-items: center; padding: 16px 12px; }
 .table-header { font-weight: 700; color: #4b5563; font-size: 13px; border-bottom: 1px solid #7B7B7B; }
 .table-row { border-bottom: 1px solid #7B7B7B; transition: 0.2s; font-size: 13px; }
 .table-row:hover { background-color: #d6d8db; }
 .table-row:last-child { border-bottom: none; }
 .clickable-row { cursor: pointer; }
 
-.fw-bold { font-weight: 600; color: #1f2937; font-size: 14px; }
+.fw-bold { padding-right: 10px; font-weight: 600; color: #1f2937; font-size: 14px; }
 .text-gray { color: #6b7280; }
 .text-small { font-size: 12px; }
 .text-right { text-align: right; display: flex; justify-content: flex-end; }
 .line-clamp { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+.badge {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+.bg-green { background-color: #d1fae5; color: #059669; }
+.bg-blue { background-color: #dbeafe; color: #2563eb; }
+.bg-gray { background-color: #f3f4f6; color: #4b5563; }
 
 /* Device Tags */
 .device-tags { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
