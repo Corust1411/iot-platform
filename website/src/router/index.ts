@@ -6,7 +6,11 @@ const router = createRouter({
     {
       path: '/',
       name: 'Login',
-      component: () => import('../views/Login.vue'), 
+      component: () => import('../views/Login.vue'),
+    },
+    {
+      path: '/login',
+      redirect: '/'
     },
     {
       path: '/manage-device',
@@ -26,7 +30,7 @@ const router = createRouter({
     {
       path: '/profile',
       name: 'Profile',
-      component: () => import('../views/Profile.vue'), 
+      component: () => import('../views/EditProfile.vue'), 
     },
     {
       path: '/register-device',

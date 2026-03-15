@@ -987,7 +987,6 @@ export default {
 /* Table overrides for settings */
 .table-container { background-color: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0; overflow: hidden; }
 
-/* บังคับให้เป็น Grid สำหรับตาราง */
 .table-header, .table-row { 
   display: grid;
   grid-template-columns: 3fr 2fr 60px; 
