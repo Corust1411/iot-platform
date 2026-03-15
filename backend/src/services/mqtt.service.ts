@@ -51,7 +51,6 @@ export const initMqttClient = (io: Server) => {
         if (rawValue === null || rawValue === undefined || typeof rawValue === 'object') continue; 
 
         let numericValue: number;
-        // format value to number
         if (typeof rawValue === 'number') {
           numericValue = rawValue;
         } else if (typeof rawValue === 'boolean') {

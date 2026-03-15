@@ -35,7 +35,6 @@ export default {
 .toggle-widget { display: flex; flex-direction: column; align-items: center; gap: 12px; }
 .toggle-status { font-weight: 700; font-size: 14px; color: #4b5563; }
 
-/* CSS ของสวิตช์ที่ย้ายมาจากหน้าหลัก */
 .switch { position: relative; display: inline-block; width: 60px; height: 34px; }
 .switch input { opacity: 0; width: 0; height: 0; }
 .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; }

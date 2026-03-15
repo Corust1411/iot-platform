@@ -30,16 +30,68 @@
             </span>
           </div>
           <div class="toolbar-actions">
-            <button class="add-widget-btn" @click="$router.push(`/dashboard/${$route.params.id}/create-widget`)">
+            <button v-if="['owner', 'edit'].includes(userRole)" class="add-widget-btn" @click="$router.push(`/dashboard/${$route.params.id}/create-widget`)">
               <span class="material-symbols-outlined">add</span>
               Add widget
             </button>
 
-            <button class="share-btn">
+            <button class="share-btn" @click="openShareModal">
               <span class="material-symbols-outlined">share</span>
               Share
             </button>
           </div>
+          <div v-if="showShareModal" class="modal-overlay" @click.self="showShareModal = false">
+          <div class="share-modal">
+            <div class="modal-header">
+              <h2>Share Dashboard</h2>
+              <button class="close-btn" @click="showShareModal = false"><span class="material-symbols-outlined">close</span></button>
+            </div>
+
+            <div class="share-input-area">
+              <input type="email" v-model="newShareEmail" placeholder="Add people by email..." />
+              <select class="role-select" v-model="newSharePermission">
+                <option value="view">Viewer</option>
+                <option v-if="['owner', 'edit'].includes(userRole)" value="edit">Editor</option>
+              </select>
+              <button class="add-btn" @click="shareWithUser">Invite</button>
+            </div>
+
+            <hr class="divider" />
+
+            <h3>People with access</h3>
+            <div class="shared-users-list">
+              <div class="user-row">
+                <div class="user-info">
+                  <div class="avatar"><span class="material-symbols-outlined">person</span></div>
+                  <div>
+                    <p class="u-name">You (Owner)</p>
+                  </div>
+                </div>
+                <span class="role-text">Owner</span>
+              </div>
+
+              <div class="user-row" v-for="user in sharedUsers" :key="user.share_id">
+                <div class="user-info">
+                  <div class="avatar bg-gray"><span class="material-symbols-outlined">person</span></div>
+                  <div>
+                    <p class="u-name">{{ user.username }}</p>
+                    <p class="u-email">{{ user.email }}</p>
+                  </div>
+                </div>
+                
+                <select class="role-select" :value="user.permission" @change="updatePermission(user.share_id, $event.target.value)">
+                  <option value="view">Viewer</option>
+                  <option v-if="['owner', 'edit'].includes(userRole)" value="edit">Editor</option>
+                  <option v-if="['owner', 'edit'].includes(userRole)" value="remove" class="text-red">Remove access</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="modal-footer">
+              <button class="done-btn" @click="showShareModal = false">Done</button>
+            </div>
+          </div>
+        </div>
         </div>
 
         <!-- widget TAB -->
@@ -55,7 +107,7 @@
             <div class="card-header">
               <span>{{ widget.title }}</span>
               <div class="action-wrapper">
-                <button class="icon-btn" @click.stop="toggleMenu(widget.id)">
+                <button v-if="['owner', 'edit'].includes(userRole)" class="icon-btn" @click.stop="toggleMenu(widget.id)">
                   <span class="material-symbols-outlined">more_horiz</span>
                 </button>
                 
@@ -109,7 +161,7 @@
             
             <div class="card-header-row">
               <h3 class="card-title">Dashboard Information</h3>
-              <button v-if="!isEditingInfo" class="icon-text-btn" @click="startEditInfo">
+              <button v-if="['owner', 'edit'].includes(userRole) && !isEditingInfo" class="icon-text-btn" @click="startEditInfo">
                 <span class="material-symbols-outlined">edit</span> Edit
               </button>
             </div>
@@ -146,7 +198,7 @@
             
             <div class="card-header-row">
               <h3 class="card-title">Linked Devices</h3>
-              <button class="add-widget-btn" @click="openAddDeviceModal">
+              <button v-if="['owner', 'edit'].includes(userRole)" class="add-widget-btn" @click="openAddDeviceModal">
                 <span class="material-symbols-outlined">add</span> Link Device
               </button>
             </div>
@@ -162,7 +214,7 @@
                 <span class="fw-bold">{{ dd.alias || dd.device_name }}</span>
                 <span><span class="badge-tag">{{ dd.protocol.toUpperCase() }}</span></span>
                 <span class="text-right">
-                  <button class="icon-btn danger-text" @click="removeLinkedDevice(dd.dashboard_device_id)">
+                  <button v-if="['owner', 'edit'].includes(userRole)" class="icon-btn danger-text" @click="removeLinkedDevice(dd.dashboard_device_id)">
                     <span class="material-symbols-outlined">link_off</span>
                   </button>
                 </span>
@@ -367,6 +419,11 @@ export default {
       availableDataKeys: [],
       showToast: false,
       toastMessage: '',
+      showShareModal: false,
+      newShareEmail: '',
+      newSharePermission: 'view',
+      sharedUsers: [],
+      userRole: 'view',
     }
   },
   async mounted() {
@@ -400,6 +457,7 @@ export default {
         this.dashboardName = res.data.name;
         this.dashboardDesc = res.data.description;
         this.editForm = { name: res.data.name, description: res.data.description };
+        this.userRole = res.data.role || 'view';
         this.fetchWidgets(id);
         this.fetchDashboardDevices(id);
       } catch (error) {
@@ -646,6 +704,52 @@ export default {
         this.showToast = false;
       }, 3000);
     },
+    async openShareModal() {
+      this.showShareModal = true;
+      await this.fetchSharedUsers();
+    },
+    async fetchSharedUsers() {
+      try {
+        const res = await http.get(`/dashboards/${this.$route.params.id}/shares`);
+        this.sharedUsers = res.data;
+      } catch (err) {
+        console.error("Failed to load shared users", err);
+      }
+    },
+    async shareWithUser() {
+      if (!this.newShareEmail) return;
+      try {
+        await http.post(`/dashboards/${this.$route.params.id}/shares`, {
+          email: this.newShareEmail,
+          permission: this.newSharePermission
+        });
+        
+        this.newShareEmail = ''; 
+        this.triggerToast("Invitation sent!");
+        await this.fetchSharedUsers(); 
+      } catch (err) {
+        const msg = err.response?.data?.message || "Failed to share";
+        alert(msg);
+      }
+    },
+    async updatePermission(shareId, newPermission) {
+      if (newPermission === 'remove') {
+        if (!confirm("Remove access for this user?")) {
+          this.fetchSharedUsers(); 
+          return;
+        }
+        try {
+          await http.delete(`/dashboards/${this.$route.params.id}/shares/${shareId}`);
+          this.triggerToast("Access removed");
+          await this.fetchSharedUsers();
+        } catch (err) { alert("Failed to remove access"); console.log(err); }
+      } else {
+        try {
+          await http.put(`/dashboards/${this.$route.params.id}/shares/${shareId}`, { permission: newPermission });
+          this.triggerToast("Permission updated");
+        } catch (err) { alert("Failed to update permission"); console.log(err); }
+      }
+    }
   }
 }
 </script>
@@ -691,7 +795,6 @@ export default {
   justify-content:space-between;
   align-items:center;
   margin-bottom:24px;
-  border-bottom: 1px solid #e5e7eb;
 }
 
 .tabs{
@@ -884,7 +987,6 @@ export default {
 /* Table overrides for settings */
 .table-container { background-color: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0; overflow: hidden; }
 
-/* บังคับให้เป็น Grid สำหรับตาราง */
 .table-header, .table-row { 
   display: grid;
   grid-template-columns: 3fr 2fr 60px; 
@@ -927,12 +1029,12 @@ export default {
 .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(2px); display: flex; justify-content: center; align-items: center; z-index: 999; }
 .modal-content { background: white; width: 100%; border-radius: 16px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); overflow: hidden; animation: modalIn 0.3s ease; }
 @keyframes modalIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-.modal-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; border-bottom: 1px solid #e5e7eb; }
+.modal-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 0px; }
 .modal-header h2 { margin: 0; font-size: 18px; font-weight: 700; color: #111827; }
 .close-btn { background: none; border: none; cursor: pointer; color: #9ca3af; padding: 4px; border-radius: 50%; transition: 0.2s; }
 .close-btn:hover { background: #f3f4f6; color: #111827; }
 .modal-body { padding: 24px; }
-.modal-footer { padding: 16px 24px; border-top: 1px solid #e5e7eb; background: #f9fafb; display: flex; justify-content: flex-end; gap: 12px; }
+.modal-footer { padding: 16px 24px; display: flex; justify-content: flex-end; gap: 12px; }
 
 /* The Switch - The box around the slider */
 .switch { position: relative; display: inline-block; width: 60px; height: 34px; }
@@ -945,6 +1047,36 @@ input:checked + .slider:before { transform: translateX(26px); }
 .slider.round { border-radius: 34px; }
 .slider.round:before { border-radius: 50%; }
 
+/* 🟢 Share Modal Styles */
+.modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; }
+.share-modal { background: white; width: 500px; border-radius: 12px; padding: 24px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
+.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.modal-header h2 { margin: 0; font-size: 20px; color: #111827; }
+.close-btn { background: none; border: none; cursor: pointer; color: #6b7280; }
+.share-input-area { display: flex; gap: 10px; margin-bottom: 20px; }
+.share-input-area input { flex: 1; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-family: inherit;}
+.share-input-area select { padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; background: #f9fafb; }
+.divider { border: 0; }
+h3 { font-size: 14px; color: #4b5563; margin-bottom: 16px; }
+
+.shared-users-list { max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; margin-bottom: 24px; }
+.user-row { display: flex; justify-content: space-between; align-items: center; }
+.user-info { display: flex; align-items: center; gap: 12px; }
+.avatar { width: 40px; height: 40px; background: #3b82f6; color: white; border-radius: 50%; display: flex; justify-content: center; align-items: center; }
+.bg-gray { background: #9ca3af; }
+.u-name { margin: 0; font-weight: 600; font-size: 14px; color: #111827; }
+.u-email { margin: 0; font-size: 12px; color: #6b7280; font-family: inherit;}
+.role-text { font-size: 14px; color: #6b7280; font-style: italic; }
+.role-select { border: 0.5px solid #d1d5db; border-radius: 10%; background: transparent; font-family: inherit; font-size: 14px; color: #374151; cursor: pointer; padding: 10px; border-radius: 4px; }
+.role-select:hover { background-color: #f3f4f6; border-color: #d1d5db;}
+.role-select option { border: 0.5px solid #d1d5db; border-radius: 10%; background: transparent; font-family: inherit; font-size: 14px; color: #374151; cursor: pointer; padding: 10px; border-radius: 4px; }
+.text-red { color: #ef4444; }
+.add-btn { background: #111827; border: none; color: white; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; transition: 0.2s; font-family: inherit; }
+.add-btn:hover { background: #374151; }
+
+.modal-footer { display: flex; justify-content: center; }
+.done-btn { background: #4E8DDF; color: white; border: none; font-family: inherit; padding: 10px 24px; border-radius: 20px; font-weight: 600; cursor: pointer; }
+.done-btn:hover { background: #3a6bc1;transition: 0.2s;}
 
 .toast-notification { position: fixed; bottom: 40px; right: 40px; background-color: #111827; color: white; padding: 12px 24px; border-radius: 8px; display: flex; align-items: center; gap: 10px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.2); z-index: 9999; font-weight: 600; font-size: 14px; }
 .toast-notification .material-symbols-outlined { font-size: 22px; color: #10b981; }
