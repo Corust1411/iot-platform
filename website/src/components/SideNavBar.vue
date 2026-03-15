@@ -6,7 +6,7 @@
         <span class="nav-text">Manage Device</span>
       </router-link>
 
-      <router-link to="/mqtt" class="nav-item">
+      <router-link to="/mqtt-websocket-client" class="nav-item">
         <span class="material-symbols-outlined nav-icon">design_services</span>
         <span class="nav-text">MQTT Client</span>
       </router-link>
