@@ -4,6 +4,11 @@ import { verifyToken } from '../middlewares/auth.middleware';
 
 const router = Router();
 
+router.get('/:id/shares', verifyToken, dashboardController.getDashboardShares);
+router.post('/:id/shares', verifyToken, dashboardController.shareDashboard);
+router.put('/:id/shares/:shareId', verifyToken, dashboardController.updateSharePermission);
+router.delete('/:id/shares/:shareId', verifyToken, dashboardController.removeShare);
+
 router.get('/:id/devices', verifyToken, dashboardController.getDashboardDevices);
 router.post('/:id/devices', verifyToken, dashboardController.addDeviceToDashboard);
 router.delete('/devices/:deviceId', verifyToken, dashboardController.removeDeviceFromDashboard);
