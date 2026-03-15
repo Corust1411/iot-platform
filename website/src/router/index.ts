@@ -26,7 +26,7 @@ const router = createRouter({
     {
       path: '/profile',
       name: 'Profile',
-      component: () => import('../views/Profile.vue'), 
+      component: () => import('../views/EditProfile.vue'), 
     },
     {
       path: '/register-device',
