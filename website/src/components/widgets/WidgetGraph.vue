@@ -51,21 +51,28 @@ export default defineComponent({
       if (newVal !== null && this.loaded) {
         const nowStr = this.formatTime(new Date());
         
-        this.chartData.labels.push(nowStr);
-        this.chartData.datasets[0].data.push(newVal);
+        const newLabels = [...this.chartData.labels, nowStr];
+        const newData = [...this.chartData.datasets[0].data, newVal];
 
         let maxPoints = 50;
         if (this.timeRange === '24h') maxPoints = 100;
         else if (this.timeRange === '7d') maxPoints = 150;
 
-        if (this.chartData.labels.length > maxPoints) {
-          this.chartData.labels.shift();
-          this.chartData.datasets[0].data.shift();
+        if (newLabels.length > maxPoints) {
+          newLabels.shift();
+          newData.shift();
         }
 
-        if (this.$refs.lineChart && this.$refs.lineChart.chart) {
-          this.$refs.lineChart.chart.update('none'); 
-        }
+        this.chartData = {
+          ...this.chartData,
+          labels: newLabels,
+          datasets: [
+            {
+              ...this.chartData.datasets[0],
+              data: newData
+            }
+          ]
+        };
       }
     }
   },
