@@ -48,9 +48,15 @@ export const createDevice = async (req: AuthRequest, res: Response) => {
   }
 };
 
-export const getDevices = async (req: Request, res: Response) => {
+export const getDevices = async (req: AuthRequest, res: Response) => {
   try {
-    const devices = await deviceService.getAllDevices();
+    const accountId = req.user?.id; 
+    
+    if (!accountId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    const devices = await deviceService.getAllDevices(accountId);
     res.json(devices);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching devices', error });
