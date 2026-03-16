@@ -165,14 +165,18 @@ export default {
     }
   },
   async mounted() {
-    const storedUser = localStorage.getItem('username')
-    if (storedUser) this.username = storedUser
+    const storedUser = localStorage.getItem('username');
+    if (storedUser) this.username = storedUser;
     
-    document.addEventListener('click', this.closeMenu)
-    await this.fetchAccounts()
+    document.addEventListener('click', this.closeMenu);
+    await this.fetchAccounts();
+    if (this.$route.query.action === 'created') {
+      this.triggerToast('Account registered successfully!');
+      this.$router.replace({ path: this.$route.path });
+    }
   },
   beforeUnmount() {
-    document.removeEventListener('click', this.closeMenu)
+    document.removeEventListener('click', this.closeMenu);
   },
   methods: {
     toggleMenu(id) {

@@ -86,7 +86,7 @@
               <label>System Role <span class="required">*</span></label>
               <select v-model="form.role" :class="{ 'error-border': showError && !form.role }">
                 <option value="user">User (Standard Access)</option>
-                <option value="viewer">Viewer (Read-only Access)</option>
+                <!-- <option value="viewer">Viewer (Read-only Access)</option> -->
                 <option value="admin">Admin (Full Access)</option>
               </select>
             </div>
@@ -139,8 +139,10 @@ export default {
 
       try {
         await http.post('/accounts', this.form);
-        alert('Account created successfully!');
-        this.$router.push('/manage-account');
+        this.$router.push({
+          path: '/manage-account',
+          query: { action: 'created' }
+        });
       } catch (error) {
         console.error('Failed to create account:', error);
         alert(error.response?.data?.message || 'Failed to create account');
