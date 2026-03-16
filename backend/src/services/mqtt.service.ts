@@ -50,7 +50,7 @@ export const initMqttClient = (io: Server) => {
         let rawValue = payload.object[key];
         if (rawValue === null || rawValue === undefined || typeof rawValue === 'object') continue; 
 
-        let inputValue: string |number;
+        let inputValue: number;
         if (typeof rawValue === 'number') {
           inputValue = rawValue;
         } else if (typeof rawValue === 'boolean') {
@@ -62,12 +62,12 @@ export const initMqttClient = (io: Server) => {
           } else if (upperVal === 'OFF') {
             inputValue = 0;
           } else {
-            if (!isNaN(Number(rawValue)) && rawValue.trim() !== '') {
-              inputValue = Number(rawValue);
-            } else {
-              inputValue = rawValue.trim();
-            }
+             inputValue = parseFloat(rawValue);
+            if (isNaN(inputValue)) {
+              console.warn(`⚠️ Skipping non-numeric value: "${rawValue}" for key: "${key}"`);
+              continue; 
           }
+        }
         } else {
           continue;
         }
@@ -75,7 +75,7 @@ export const initMqttClient = (io: Server) => {
           INSERT INTO device_telemetry (device_id, key, value, time)
           VALUES ($1, $2, $3, NOW())
         `;
-        await pool.query(insertQuery, [internalDeviceId, key, String(inputValue)]);
+        await pool.query(insertQuery, [internalDeviceId, key, inputValue]);
 
         io.emit('telemetry_update', {
           device_id: internalDeviceId,

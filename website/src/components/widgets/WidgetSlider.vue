@@ -83,7 +83,7 @@ export default {
   width: 90%;
   cursor: pointer;
   accent-color: #3b82f6;
-
+}
 .slider-labels {
   display: flex;
   justify-content: space-between;
