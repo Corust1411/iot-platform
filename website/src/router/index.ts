@@ -18,9 +18,9 @@ const router = createRouter({
       component: () => import('../views/ManageDevice.vue'), 
     },
     {
-      path: '/mqtt',
+      path: '/mqtt-websocket-client',
       name: 'MQTTClient',
-      component: () => import('../views/Mqtt.vue'),
+      component: () => import('../views/MqttClient.vue'),
     },
     {
       path: '/managedashboard',

@@ -487,7 +487,7 @@ export default {
       try {
         const res = await http.get(`/dashboards/${id}/widgets`);
         this.widgets = res.data.map(w => {
-          let val = w.current_value !== null ? Number(w.current_value) : null;
+          let val = w.current_value !== null ? w.current_value : null;
           
           if (w.type === 'toggle' && val !== null) {
             val = val === 1 ? true : false;

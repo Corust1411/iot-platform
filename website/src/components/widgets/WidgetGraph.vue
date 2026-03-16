@@ -122,7 +122,7 @@ export default defineComponent({
 .graph-widget {
   position: relative;
   width: 100%;
-  height: 140px; /* เพิ่มความสูงนิดหน่อยให้กราฟดูไม่อึดอัด */
+  height: 140px;
   margin-top: -15px;
 }
 .loading-text {
