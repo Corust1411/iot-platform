@@ -42,6 +42,14 @@
                 </div>
               </div>
               <div class="info-item">
+                <span class="info-label">Username</span>
+                <input type="text" v-model="connection.username" class="form-input w-100" :disabled="isConnected" placeholder="Optional">
+              </div>
+              <div class="info-item">
+                <span class="info-label">Password</span>
+                <input type="password" v-model="connection.password" class="form-input w-100" :disabled="isConnected" placeholder="Optional">
+              </div>
+              <div class="info-item">
                 <span class="info-label">Path</span>
                 <input type="text" v-model="connection.path" class="form-input w-100" :disabled="isConnected" placeholder="/mqtt">
               </div>
@@ -226,6 +234,8 @@ export default {
         clientId: clientId,
         clean: true,
         connectTimeout: 4000,
+        username: username || undefined,
+        password: password || undefined,
       };
 
       this.triggerToast(`Connecting to ${url}...`);
