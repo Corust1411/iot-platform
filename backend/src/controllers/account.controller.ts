@@ -25,7 +25,8 @@ export const createAccount = async (req: AuthRequest, res: Response) => {
 
 export const updateAccount = async (req: AuthRequest, res: Response) => {
   try {
-    const accountId = parseInt(req.body.id);
+    const idParam = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    const accountId = parseInt(idParam as string);
     const updatedAccount = await accountService.updateAccount(accountId, req.body);
     res.status(200).json({ message: 'Account updated successfully', account: updatedAccount });
   } catch (error: any) {
@@ -36,10 +37,17 @@ export const updateAccount = async (req: AuthRequest, res: Response) => {
 
 export const deleteAccount = async (req: AuthRequest, res: Response) => {
   try {
-    const accountId = parseInt(req.body.id);
+    const idParam = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    const accountId = parseInt(idParam as string);
+
+    if (isNaN(accountId)) {
+      return res.status(400).json({ message: "Invalid account ID" });
+    }
+
     if (req.user?.id === accountId) {
       return res.status(400).json({ message: "You cannot delete your own account" });
     }
+    
     await accountService.deleteAccount(accountId);
     res.status(200).json({ message: 'Account deleted successfully' });
   } catch (error: any) {
