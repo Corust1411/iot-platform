@@ -87,8 +87,9 @@
           <div class="detail-card">
             <h2 class="section-title">Subscriptions</h2>
             <div class="subscribe-input mt-16">
-              <div class="input-with-btn w-100">
-                <input type="text" v-model="subTopic" class="form-input w-100" placeholder="Topic to subscribe (e.g. #)">
+              <div class="input-with-btn w-100" style="display: flex;">
+                <input type="color" v-model="subTopicColor" class="color-picker-input" title="Choose topic color" />
+                <input type="text" v-model="subTopic" class="form-input w-100" style="border-radius: 0; border-left: none;" placeholder="Topic (e.g. sensor/#)">
                 <button class="save-btn" style="border-radius: 0 6px 6px 0;" @click="subscribeTopic" :disabled="!isConnected">Subscribe</button>
               </div>
             </div>
@@ -96,9 +97,12 @@
             <div class="subscriptions-list mt-16">
               <div v-if="subscriptions.length === 0" class="empty-text">No active subscriptions.</div>
               <div v-for="(sub, index) in subscriptions" :key="index" class="sub-badge">
-                <div class="sub-info">
-                  <span class="sub-topic">{{ sub.topic }}</span>
-                  <span class="sub-qos">QoS {{ sub.qos }}</span>
+                <div class="sub-info" style="display: flex; align-items: center; gap: 10px;">
+                  <span class="color-dot" :style="{ backgroundColor: sub.color }"></span>
+                  <div style="display: flex; flex-direction: column;">
+                    <span class="sub-topic">{{ sub.topic }}</span>
+                    <span class="sub-qos">QoS {{ sub.qos }}</span>
+                  </div>
                 </div>
                 <button class="icon-btn text-red" @click="unsubscribeTopic(sub.topic)" title="Unsubscribe">
                   <span class="material-symbols-outlined" style="font-size: 18px;">close</span>
@@ -118,7 +122,7 @@
             <div class="terminal-box" ref="terminalBox">
               <div v-if="messages.length === 0" class="empty-terminal">Waiting for messages...</div>
               
-              <div v-for="(msg, index) in messages" :key="index" class="msg-row">
+              <div v-for="(msg, index) in messages" :key="index" class="msg-row" :style="{ borderLeftColor: msg.color }">
                 <div class="msg-header">
                   <span class="msg-time">[{{ msg.time }}]</span>
                   <span class="msg-topic">{{ msg.topic }}</span>
@@ -171,6 +175,7 @@ export default {
       },
       
       subTopic: '#',
+      subTopicColor: '#3b82f6',
       subscriptions: [],
       messages: []
     }
@@ -187,6 +192,19 @@ export default {
   methods: {
     generateClientId() {
       this.connection.clientId = 'kmitl_iot_' + Math.random().toString(16).substr(2, 8);
+    },
+    getRandomColor() {
+      const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4'];
+      return colors[Math.floor(Math.random() * colors.length)];
+    },
+    
+    getTopicColor(topic) {
+      for (const sub of this.subscriptions) {
+        const regexStr = '^' + sub.topic.replace(/\+/g, '[^/]+').replace(/#/g, '.*') + '$';
+        const regex = new RegExp(regexStr);
+        if (regex.test(topic)) return sub.color;
+      }
+      return '#374151';
     },
     connectMqtt() {
       if (this.client) this.client.end(); 
@@ -217,13 +235,21 @@ export default {
         this.isConnected = false;
       });
 
+      if (this.subscriptions.find(s => s.topic === this.subTopic)) {
+        this.triggerToast('Already subscribed to this topic');
+        return;
+      }
+
       this.client.on('message', (topic, message, packet) => {
         const time = new Date().toLocaleTimeString('en-GB');
+        const color = this.getTopicColor(topic); 
+        
         this.messages.push({
           time: time,
           topic: topic,
           payload: message.toString(),
-          qos: packet.qos
+          qos: packet.qos,
+          color: color
         });
         
         this.$nextTick(() => {
@@ -249,9 +275,10 @@ export default {
 
       this.client.subscribe(this.subTopic, { qos: 0 }, (err) => {
         if (!err) {
-          this.subscriptions.push({ topic: this.subTopic, qos: 0 });
+          this.subscriptions.push({ topic: this.subTopic, qos: 0, color: this.subTopicColor });
           this.triggerToast(`Subscribed to ${this.subTopic}`);
           this.subTopic = '';
+          this.subTopicColor = this.getRandomColor();
         } else {
           this.triggerToast('Failed to subscribe');
         }
@@ -338,9 +365,9 @@ export default {
 .cancel-btn:hover { background: #fef2f2; }
 
 /* Subscriptions List */
-.subscriptions-list { display: flex; flex-direction: column; gap: 8px; max-height: 150px; overflow-y: auto; }
+.subscriptions-list { display: flex; flex-direction: column; gap: 8px; max-height: max-content; overflow-y: auto; }
 .sub-badge { display: flex; justify-content: space-between; align-items: center; background: #f9fafb; border: 1px solid #e5e7eb; padding: 8px 12px; border-radius: 6px; }
-.sub-info { display: flex; flex-direction: column; }
+.sub-info { display: flex;  }
 .sub-topic { font-weight: 600; font-size: 14px; color: #111827; }
 .sub-qos { font-size: 12px; color: #6b7280; }
 .sub-badge .icon-btn { border: none; background: transparent; padding: 4px; }
@@ -356,7 +383,29 @@ export default {
 .msg-time { color: #9ca3af; }
 .msg-topic { background: #374151; color: #d1d5db; padding: 2px 6px; border-radius: 4px; font-weight: 600; }
 .msg-qos { color: #6b7280; }
-.msg-payload { color: #10b981; font-size: 14px; word-break: break-all; }
+.msg-payload { color: #d1d5db; font-size: 14px; word-break: break-all; }
+
+.color-picker-input {
+  height: 35px;
+  width: 45px;
+  padding: 2px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px 0 0 6px;
+  cursor: pointer;
+  background: #ffffff;
+  box-sizing: border-box;
+}
+
+.color-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  display: inline-block;
+  box-shadow: inset 0 0 2px rgba(0,0,0,0.2);
+}
+
+.msg-row { border-left-width: 3px; border-left-style: solid; padding-left: 10px; }
+.msg-topic { color: #ffffff; padding: 2px 8px; border-radius: 4px; font-weight: 600; text-shadow: 0px 1px 2px rgba(0,0,0,0.3); }
 
 /* Toast */
 .toast-notification { position: fixed; bottom: 40px; right: 40px; background-color: #111827; color: white; padding: 12px 24px; border-radius: 8px; display: flex; align-items: center; gap: 10px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.2); z-index: 9999; font-weight: 600; font-size: 14px; }
