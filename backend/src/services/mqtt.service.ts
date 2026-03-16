@@ -3,10 +3,14 @@ import { pool } from '../config/db';
 import { Server } from 'socket.io';
 
 const MQTT_BROKER_URL = process.env.MQTT_BROKER_URL || 'mqtt://localhost:1883';
+const mqttOptions = {
+  username: process.env.MQTT_USER || 'server_admin',
+  password: process.env.MQTT_PASSWORD || 'admin_pass'
+};
 let mqttClient: mqtt.MqttClient;
 
 export const initMqttClient = (io: Server) => {
-  const client = mqtt.connect(MQTT_BROKER_URL);
+  const client = mqtt.connect(MQTT_BROKER_URL, mqttOptions);
   mqttClient = client;
 
   client.on('connect', () => {

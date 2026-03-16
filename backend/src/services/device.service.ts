@@ -60,8 +60,11 @@ export const createNewDevice = async (accountId: number, data: any) => {
   }
 };
 
-export const getAllDevices = async () => {
-  const result = await pool.query(`SELECT * FROM device ORDER BY created_at DESC`);
+export const getAllDevices = async (accountId: number) => {
+  const result = await pool.query(
+    `SELECT * FROM device WHERE account_id = $1 ORDER BY created_at DESC`,
+    [accountId]
+  );
   return result.rows;
 };
 
