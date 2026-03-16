@@ -82,8 +82,7 @@ export default {
 .range-slider {
   width: 90%;
   cursor: pointer;
-  accent-color: #3b82f6; /* เปลี่ยนสี Slider เป็นสีฟ้า */
-}
+  accent-color: #3b82f6;
 
 .slider-labels {
   display: flex;
