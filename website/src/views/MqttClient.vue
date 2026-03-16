@@ -149,53 +149,64 @@
 import TopNavBar from '@/components/TopNavBar.vue'
 import SideNavBar from '@/components/SideNavBar.vue'
 import mqtt from 'mqtt'
+import { mqttStore } from '@/store/mqtt.store'
 
 export default {
   components: { TopNavBar, SideNavBar },
   data() {
     return {
       navbarUsername: 'Unknown User',
-      client: null,
-      isConnected: false,
       showToast: false,
       toastMessage: '',
-      
-      connection: {
-        protocol: 'ws',
-        host: 'localhost',
-        port: 9001,
-        path: '/',
-        clientId: 'kmitl_iot_' + Math.random().toString(16).substr(2, 8),
-      },
-      
-      publishData: {
-        topic: '',
-        message: '',
-        qos: 0
-      },
-      
+      publishData: { topic: '', message: '', qos: 0 },
       subTopic: '#',
       subTopicColor: '#3b82f6',
-      subscriptions: [],
-      messages: []
+    }
+  },
+  computed: {
+    client: { get() { return mqttStore.client; }, set(v) { mqttStore.client = v; } },
+    isConnected: { get() { return mqttStore.isConnected; }, set(v) { mqttStore.isConnected = v; } },
+    connection() { return mqttStore.connection; },
+    subscriptions: { get() { return mqttStore.subscriptions; }, set(v) { mqttStore.subscriptions = v; } },
+    messages: { get() { return mqttStore.messages; }, set(v) { mqttStore.messages = v; } },
+  },
+  watch: {
+    'messages.length'() {
+      this.scrollToBottom();
     }
   },
   mounted() {
     const storedUser = localStorage.getItem('username');
     if (storedUser) this.navbarUsername = storedUser;
-  },
-  beforeUnmount() {
-    if (this.client) {
-      this.client.end();
-    }
+    this.scrollToBottom();
+    this.subTopicColor = this.getRandomColor();
   },
   methods: {
+    scrollToBottom() {
+      this.$nextTick(() => {
+        if (this.$refs && this.$refs.terminalBox) {
+          this.$refs.terminalBox.scrollTop = this.$refs.terminalBox.scrollHeight;
+        }
+      });
+    },
     generateClientId() {
       this.connection.clientId = 'kmitl_iot_' + Math.random().toString(16).substr(2, 8);
     },
     getRandomColor() {
-      const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4'];
-      return colors[Math.floor(Math.random() * colors.length)];
+      const defaultColors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#14b8a6', '#f43f5e', '#84cc16'];
+      const usedColors = this.subscriptions.map(sub => sub.color);
+      const availableColors = defaultColors.filter(color => !usedColors.includes(color));
+
+      if (availableColors.length > 0) {
+        return availableColors[Math.floor(Math.random() * availableColors.length)];
+      } else {
+        let newHex;
+        do {
+          newHex = '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
+        } while (usedColors.includes(newHex));
+        
+        return newHex;
+      }
     },
     
     getTopicColor(topic) {
