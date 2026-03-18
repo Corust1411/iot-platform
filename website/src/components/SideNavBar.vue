@@ -29,6 +29,15 @@
         <span class="material-symbols-outlined">manage_accounts</span>
         <span class="nav-text">Profile Setting</span>
       </router-link>
+
+      <router-link 
+        v-if="userRole === 'admin'" 
+        to="/audit-log"
+        class="nav-item admin-only"
+      >
+        <span class="material-symbols-outlined">history</span>
+        <span class="nav-text">Audit Log</span>
+      </router-link>
     </nav>
   </aside>
 </template>
