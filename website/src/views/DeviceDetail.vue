@@ -31,8 +31,9 @@
                   <span class="info-label">Category</span>
                   <select v-if="isEditing" v-model="editForm.category" class="form-input">
                     <option value="sensor">Sensor</option>
-                    <option value="actuator">Actuator</option>
-                    <option value="gateway">Gateway</option>
+                    <option value="light">Light</option>
+                    <option value="camera">Camera</option>
+                    <option value="position">Position</option>
                   </select>
                   <span v-else class="info-value badge">{{ device.category }}</span>
                 </div>
@@ -341,7 +342,7 @@ export default {
 }
 
 .info-value {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 500;
   color: #1f2937;
 }
