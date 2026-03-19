@@ -5,11 +5,15 @@ import authRoutes from './routes/auth.route';
 import accountRoutes from './routes/account.route';
 import dashboardRoutes from './routes/dashboard.route';
 import profileRoutes from './routes/profile.route';
+import { auditLogger } from './middlewares/audit.middleware';
+import logRoutes from './routes/log.route';
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
+app.use(auditLogger);
+app.use('/api/logs', logRoutes)
 app.use('/api/devices', deviceRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/accounts', accountRoutes);
