@@ -229,7 +229,7 @@
 
         <div v-if="showAddDeviceModal" class="modal-overlay" @click.self="showAddDeviceModal = false">
           <div class="modal-content wide-modal">
-            <div class="modal-header">
+            <div class="modal-header-link-device">
               <h2>Select Device to Link</h2>
               <button class="close-btn" @click="showAddDeviceModal = false">
                 <span class="material-symbols-outlined">close</span>
@@ -1030,6 +1030,7 @@ export default {
 .modal-content { background: white; width: 100%; border-radius: 16px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); overflow: hidden; animation: modalIn 0.3s ease; }
 @keyframes modalIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 0px; }
+.modal-header-link-device { display: flex; justify-content: space-between; align-items: center; padding: 30px 30px 0px 30px; }
 .modal-header h2 { margin: 0; font-size: 18px; font-weight: 700; color: #111827; }
 .close-btn { background: none; border: none; cursor: pointer; color: #9ca3af; padding: 4px; border-radius: 50%; transition: 0.2s; }
 .close-btn:hover { background: #f3f4f6; color: #111827; }
