@@ -27,7 +27,7 @@
         class="nav-item admin-only"
       >
         <span class="material-symbols-outlined">manage_accounts</span>
-        <span class="nav-text">Profile Setting</span>
+        <span class="nav-text">Manage Accounts</span>
       </router-link>
 
       <router-link 
