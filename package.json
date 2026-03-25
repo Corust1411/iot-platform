@@ -7,9 +7,12 @@
     "doc": "docs"
   },
   "scripts": {
-  "website": "npm run dev --prefix website",
-  "backend": "npm run dev --prefix backend",
-  "dev": "concurrently \"npm run website\" \"npm run backend\""
+    "website": "npm run dev --prefix website",
+    "backend": "npm run dev --prefix backend",
+    "dev": "concurrently \"npm run website\" \"npm run backend\"",
+    "build": "npm run build --prefix website",
+    "preview:website": "npm run preview --prefix website",
+    "preview": "concurrently \"npm run backend\" \"npm run preview:website\""
   },
   "keywords": [],
   "author": "",
