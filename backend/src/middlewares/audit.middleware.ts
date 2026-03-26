@@ -8,9 +8,9 @@ interface AuthRequest extends Request {
 const getReadableAction = (method: string, url: string): string => {
   const lowerUrl = url.toLowerCase();
   
-//   if (lowerUrl.includes('/login') || lowerUrl.includes('/auth')) {
-//     return 'Login';
-//   }
+  if (lowerUrl.includes('/login') || lowerUrl.includes('/auth')) {
+    return 'Login';
+  }
 
   let entity = 'System';
   if (lowerUrl.includes('/devices')) entity = 'Device';
