@@ -269,7 +269,7 @@
         <div v-if="showEditWidgetModal" class="modal-overlay" @click.self="showEditWidgetModal = false">
           <div class="modal-content wide-modal">
             
-            <div class="modal-header">
+            <div class="modal-header-edit-widget">
               <h2>Edit Widget</h2>
               <button class="close-btn" @click="showEditWidgetModal = false">
                 <span class="material-symbols-outlined">close</span>
@@ -1031,7 +1031,7 @@ export default {
 @keyframes modalIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 0px; }
 .modal-header-link-device { display: flex; justify-content: space-between; align-items: center; padding: 30px 30px 0px 30px; }
-.modal-header h2 { margin: 0; font-size: 18px; font-weight: 700; color: #111827; }
+.modal-header-edit-widget { display: flex; justify-content: space-between; align-items: center; padding: 10px 30px 0px; }
 .close-btn { background: none; border: none; cursor: pointer; color: #9ca3af; padding: 4px; border-radius: 50%; transition: 0.2s; }
 .close-btn:hover { background: #f3f4f6; color: #111827; }
 .modal-body { padding: 24px; }
